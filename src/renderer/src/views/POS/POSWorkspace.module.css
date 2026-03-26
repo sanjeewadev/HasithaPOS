@@ -1,0 +1,233 @@
+/* src/renderer/src/views/POS/POSWorkspace.module.css */
+.posGrid {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  grid-template-columns: 1fr 400px;
+  grid-template-rows: 1fr auto;
+  gap: 10px;
+  padding: 10px;
+  background-color: #e2e8f0;
+}
+
+/* --- AREA 1: PRODUCTS --- */
+.productsArea {
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.productScroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  align-content: start;
+}
+
+.productBtn {
+  background-color: #f1f5f9;
+  border: 2px solid #94a3b8;
+  border-radius: 4px;
+  padding: 15px 10px;
+  height: 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #94a3b8;
+}
+
+.productBtn:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+.productName {
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 14px;
+  text-align: left;
+}
+
+.productPrice {
+  font-weight: 800;
+  color: #059669;
+  font-size: 16px;
+  text-align: right;
+}
+
+/* --- AREA 2: CART --- */
+.cartArea {
+  grid-column: 2 / 3;
+  grid-row: 1 / 3;
+  background: white;
+  border: 2px solid #cbd5e1;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.cartHeader {
+  padding: 15px;
+  background-color: #0f172a;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cartHeader h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.clearBtn {
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid #ef4444;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.cartList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  background-color: #f8fafc;
+}
+
+.cartItem {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  align-items: center;
+  background: white;
+  padding: 15px 10px;
+  margin-bottom: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  box-shadow: 0 2px 0 #e2e8f0;
+}
+
+.cartItemName {
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 14px;
+}
+
+.qtyControls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.qtyBtn {
+  background: #e2e8f0;
+  border: 1px solid #94a3b8;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.cartItemPrice {
+  font-weight: 800;
+  color: #0f172a;
+  text-align: right;
+  padding-right: 10px;
+}
+
+.deleteBtn {
+  background: #fee2e2;
+  color: #ef4444;
+  border: 1px solid #fca5a5;
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* --- AREA 3: NUMPAD & ACTIONS --- */
+.actionArea {
+  grid-column: 1 / 2;
+  grid-row: 2 / 3;
+  background: white;
+  border: 2px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 15px;
+  min-height: 200px;
+}
+
+.numpadContainer {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  gap: 15px;
+  height: 100%;
+}
+
+.numpadGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.numBtn {
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  font-size: 24px;
+  font-weight: 800;
+  color: #1e293b;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #cbd5e1;
+}
+
+.numBtn:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+.actionGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.payBtn {
+  background: #059669;
+  border: 2px solid #047857;
+  color: white;
+  font-size: 20px;
+  font-weight: 800;
+  border-radius: 4px;
+  flex: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #047857;
+}
+
+.payBtn:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+.discountBtn {
+  background: #f59e0b;
+  border: 2px solid #d97706;
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 15px 0;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #d97706;
+}

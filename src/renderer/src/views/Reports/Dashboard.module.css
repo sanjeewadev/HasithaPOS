@@ -1,0 +1,136 @@
+/* src/renderer/src/views/Reports/Dashboard.module.css */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100%;
+}
+
+/* --- Top KPI Cards --- */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
+
+.kpiCard {
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 20px;
+  border-top: 5px solid #0f172a; /* Thick industrial top border */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.kpiCard.success {
+  border-top-color: #059669;
+}
+.kpiCard.warning {
+  border-top-color: #f59e0b;
+}
+.kpiCard.danger {
+  border-top-color: #dc2626;
+}
+
+.kpiTitle {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.kpiValue {
+  color: #1e293b;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.kpiValue.success {
+  color: #059669;
+}
+.kpiValue.danger {
+  color: #dc2626;
+}
+
+/* --- Main Content Sections --- */
+.bottomGrid {
+  display: grid;
+  grid-template-columns: 2fr 1fr; /* Table on left, Alerts on right */
+  gap: 15px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.section {
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sectionHeader {
+  padding: 15px;
+  border-bottom: 2px solid #e2e8f0;
+  font-weight: 800;
+  color: #1e293b;
+  font-size: 16px;
+  background: #f8fafc;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* --- Table Styles --- */
+.tableWrapper {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.classicTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.classicTable th {
+  background: #0f172a;
+  color: #ffffff;
+  padding: 12px 10px;
+  text-align: left;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+}
+
+.classicTable td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #cbd5e1;
+  color: #1e293b;
+}
+
+.classicTable tr:hover {
+  background: #e2e8f0;
+}
+
+.statusPaid {
+  background: #dcfce7;
+  color: #16a34a;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.alertItem {
+  padding: 15px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.alertItem:last-child {
+  border-bottom: none;
+}

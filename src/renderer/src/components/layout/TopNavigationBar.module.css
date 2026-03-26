@@ -1,0 +1,79 @@
+/* Custom Frameless Drag Area */
+.headerContainer {
+  height: 60px;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 1px solid #e2e8f0;
+  -webkit-app-region: drag; /* Lets you drag the frameless window! */
+  user-select: none;
+}
+
+/* We must make clickable things NON-draggable */
+.noDrag {
+  -webkit-app-region: no-drag;
+}
+
+/* The Modern Pill Switcher (Like your screenshot) */
+.pillContainer {
+  display: flex;
+  background-color: #f1f5f9;
+  border-radius: 30px;
+  padding: 4px;
+  gap: 5px;
+}
+
+.pillButton {
+  padding: 8px 20px;
+  border-radius: 25px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pillButton:hover {
+  color: #1e293b;
+}
+
+/* The active state with the blue dot indicator */
+.pillActive {
+  background-color: #ffffff;
+  color: #3b82f6;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+.pillActive::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #3b82f6;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.logoutBtn {
+  color: #ef4444;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}

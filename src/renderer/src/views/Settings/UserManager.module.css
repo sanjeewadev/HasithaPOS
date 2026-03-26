@@ -1,0 +1,219 @@
+/* src/renderer/src/views/Settings/UserManager.module.css */
+.container {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 15px;
+  height: 100%;
+}
+
+.panel {
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.panelHeader {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #1e293b;
+  font-size: 18px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* --- Table Styles --- */
+.tableWrapper {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+}
+
+.classicTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.classicTable th {
+  background: #0f172a;
+  color: #ffffff;
+  padding: 12px 10px;
+  text-align: left;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+}
+
+.classicTable td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #cbd5e1;
+  color: #1e293b;
+}
+
+.classicTable tr:hover {
+  background: #e2e8f0;
+  cursor: pointer;
+}
+
+.statusActive {
+  background: #dcfce7;
+  color: #16a34a;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.statusBlocked {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+/* --- Form Styles --- */
+.formGroup {
+  margin-bottom: 15px;
+}
+
+.formGroup label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 5px;
+  color: #334155;
+  font-size: 13px;
+}
+
+.classicInput,
+.classicSelect {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 14px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: inherit;
+}
+
+.classicInput:focus,
+.classicSelect:focus {
+  border-color: #3b82f6;
+  background: #ffffff;
+  outline: none;
+}
+
+/* --- Permissions Grid --- */
+.permissionsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.permissionItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+}
+
+/* --- Buttons --- */
+.btnGroup {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.primaryBtn {
+  flex: 2;
+  background: #0f172a;
+  color: white;
+  border: 2px solid #020617;
+  padding: 12px;
+  font-weight: 800;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #020617;
+}
+
+.primaryBtn:active {
+  transform: translateY(3px);
+  box-shadow: none;
+}
+
+.clearBtn {
+  flex: 1;
+  background: #94a3b8;
+  color: white;
+  border: 2px solid #64748b;
+  padding: 12px;
+  font-weight: 800;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #64748b;
+}
+
+.clearBtn:active {
+  transform: translateY(3px);
+  box-shadow: none;
+}
+
+.actionBtn {
+  background: #e2e8f0;
+  border: 1px solid #94a3b8;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  color: #1e293b;
+  margin-right: 5px;
+}
+
+.actionBtn:hover {
+  background: #cbd5e1;
+}
+
+.blockBtn {
+  background: #fee2e2;
+  color: #ef4444;
+  border: 1px solid #fca5a5;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.blockBtn:hover {
+  background: #fecaca;
+}
+
+.unblockBtn {
+  background: #dcfce7;
+  color: #16a34a;
+  border: 1px solid #86efac;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.unblockBtn:hover {
+  background: #bbf7d0;
+}

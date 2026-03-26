@@ -1,0 +1,32 @@
+/* src/renderer/src/styles/global.css */
+
+/* 1. CSS Reset: Remove all default browser margins and padding */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* 2. Global Variables: Your brand colors from the C# app */
+:root {
+  --bg-color: #f8fafc;
+  --sidebar-bg: #0f172a;
+  --sidebar-hover: #1e293b;
+  --primary-color: #059669;
+  --text-dark: #1e293b;
+  --text-light: #94a3b8;
+  --danger-color: #dc2626;
+  --border-color: #e2e8f0;
+}
+
+/* 3. Base Body Setup */
+html,
+body,
+#root {
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--bg-color);
+  color: var(--text-dark);
+  overflow: hidden; /* Prevents the whole app from scrolling awkwardly */
+}
