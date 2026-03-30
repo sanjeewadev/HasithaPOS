@@ -1,7 +1,9 @@
+// src/main/repositories/categoryRepo.ts
 import { getDb } from '../database'
 
 export function getAllCategories() {
-  return getDb().prepare('SELECT * FROM Categories').all()
+  // Update: Added ORDER BY to keep your file explorer alphabetized!
+  return getDb().prepare('SELECT * FROM Categories ORDER BY Name ASC').all()
 }
 
 export function addCategory(category: any) {

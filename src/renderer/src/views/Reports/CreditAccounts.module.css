@@ -1,4 +1,4 @@
-/* src/renderer/src/views/Reports/SalesHistory.module.css */
+/* src/renderer/src/views/Reports/CreditAccounts.module.css */
 .container {
   height: 100%;
   display: flex;
@@ -12,58 +12,27 @@
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  padding: 20px;
+  padding: 20px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   box-shadow: var(--shadow-sm);
 }
-
-.filterGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  flex: 1;
-}
-.dateFilters {
+.headerInfo {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-weight: 700;
-  color: var(--text-muted);
-  font-size: 13px;
+  gap: 30px;
+}
+.panelTitle {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 20px;
+  font-weight: 800;
   text-transform: uppercase;
 }
-.dateInput {
-  padding: 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-family: inherit;
-  font-size: 14px;
-  background: var(--bg-canvas);
-  color: var(--text-main);
-}
-.loadBtn {
-  padding: 10px 20px;
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-weight: 800;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.loadBtn:hover {
-  filter: brightness(0.9);
-}
-.loadBtn:disabled {
-  background: var(--text-muted);
-  cursor: not-allowed;
-}
-
 .searchInput {
-  max-width: 400px;
-  padding: 12px;
+  width: 300px;
+  padding: 12px 16px;
   border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 14px;
@@ -76,16 +45,12 @@
   background: var(--bg-surface);
 }
 
-.summaryGroup {
-  display: flex;
-  gap: 20px;
-  padding-left: 20px;
-  border-left: 2px solid var(--border-color);
-}
 .summaryBox {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  padding-left: 20px;
+  border-left: 2px solid var(--border-color);
 }
 .summaryLabel {
   font-size: 12px;
@@ -93,13 +58,8 @@
   color: var(--text-muted);
   text-transform: uppercase;
 }
-.summaryValueSuccess {
-  font-size: 24px;
-  font-weight: 900;
-  color: #10b981;
-}
 .summaryValueDanger {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 900;
   color: #ef4444;
 }
@@ -150,51 +110,20 @@
   font-weight: 600;
 }
 
-/* Badges & Status */
-.voidedRow td {
-  opacity: 0.5;
-  background: #f8fafc;
-}
-.statusPaid {
-  color: #10b981;
-  font-weight: 900;
-  font-size: 12px;
-}
-.statusVoid {
-  color: #ef4444;
-  font-weight: 900;
-  font-size: 12px;
-}
-.cashBadge {
-  background: #dcfce7;
-  color: #15803d;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 800;
-}
-.creditBadge {
-  background: #fef3c7;
-  color: #92400e;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.viewBtn {
-  background: transparent;
-  border: 1px solid var(--primary);
+.settleBtn {
+  background: #ecfdf5;
+  border: 1px solid #10b981;
+  color: #059669;
   padding: 8px 16px;
-  border-radius: 4px;
+  border-radius: 6px;
   font-weight: 800;
   cursor: pointer;
-  color: var(--primary);
   font-size: 11px;
   transition: 0.2s;
 }
-.viewBtn:hover {
-  background: rgba(37, 99, 235, 0.1);
+.settleBtn:hover {
+  background: #10b981;
+  color: white;
 }
 
 /* --- MODAL --- */
@@ -218,73 +147,14 @@
   box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
-  max-height: 90vh;
 }
 .modalHeader {
-  padding: 20px;
+  padding: 20px 24px;
   background: var(--bg-canvas);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-.dangerBanner {
-  background: #fef2f2;
-  color: #dc2626;
-  padding: 10px 20px;
-  font-weight: 800;
-  font-size: 13px;
-  text-align: center;
-  border-bottom: 1px solid #fecaca;
-}
-.modalBody {
-  padding: 20px;
-  overflow-y: auto;
-  flex: 1;
-}
-.modalSummary {
-  margin-top: 20px;
-  padding: 15px;
-  background: #f8fafc;
-  border-radius: 8px;
-}
-.summaryLine {
-  display: flex;
-  justify-content: space-between;
-  font-weight: 600;
-  margin-bottom: 5px;
-}
-.summaryLine span {
-  font-weight: 800;
-  color: var(--text-main);
-}
-.modalFooter {
-  padding: 15px 20px;
-  border-top: 1px solid var(--border-color);
-  background: var(--bg-canvas);
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.closeBtn {
-  padding: 10px 20px;
-  background: #94a3b8;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.printBtn {
-  padding: 10px 20px;
-  background: #0f172a;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-weight: 700;
-  cursor: pointer;
-  flex: 1;
 }
 .closeIcon {
   background: none;
@@ -292,4 +162,65 @@
   font-size: 20px;
   cursor: pointer;
   color: var(--text-muted);
+}
+
+.modalBody {
+  padding: 24px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.formGroup label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.moneyInput {
+  padding: 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--success);
+  text-align: right;
+}
+.moneyInput:focus {
+  border-color: var(--success);
+  outline: none;
+}
+.helperText {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+.cancelBtn {
+  padding: 12px 20px;
+  background: transparent;
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.submitBtn {
+  padding: 12px 24px;
+  background: var(--success);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 800;
+  cursor: pointer;
+  flex: 1;
 }

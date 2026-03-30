@@ -4,12 +4,12 @@
   flex-direction: column;
   width: 100vw;
   height: 100vh;
-  background-color: #f8fafc; /* Light modern background */
-  overflow: hidden; /* Prevents the whole window from scrolling */
+  background-color: var(--bg-canvas); /* Uses the soft modern gray */
+  overflow: hidden;
 }
 
 .mainContent {
-  flex: 1; /* Takes up all remaining space below the header */
+  flex: 1;
   display: flex;
   overflow: hidden;
   position: relative;

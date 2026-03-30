@@ -1,3 +1,4 @@
+// src/main/repositories/supplierRepo.ts
 import { getDb } from '../database'
 
 export function getAllSuppliers() {
@@ -5,15 +6,17 @@ export function getAllSuppliers() {
 }
 
 export function addSupplier(supplier: any) {
+  // Update: Removed 'Note' so the database doesn't crash from 'undefined'
   return getDb()
-    .prepare('INSERT INTO Suppliers (Name, Phone, Note) VALUES (?, ?, ?)')
-    .run(supplier.Name, supplier.Phone, supplier.Note)
+    .prepare('INSERT INTO Suppliers (Name, Phone) VALUES (?, ?)')
+    .run(supplier.Name, supplier.Phone || null)
 }
 
 export function updateSupplier(supplier: any) {
+  // Update: Removed 'Note' here as well
   return getDb()
-    .prepare('UPDATE Suppliers SET Name = ?, Phone = ?, Note = ? WHERE Id = ?')
-    .run(supplier.Name, supplier.Phone, supplier.Note, supplier.Id)
+    .prepare('UPDATE Suppliers SET Name = ?, Phone = ? WHERE Id = ?')
+    .run(supplier.Name, supplier.Phone || null, supplier.Id)
 }
 
 export function deleteSupplier(id: number) {

@@ -1,3 +1,4 @@
+// src/preload/index.ts
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
@@ -35,22 +36,46 @@ const api = {
   receiveStock: (mov: any) => ipcRenderer.invoke('receive-stock', mov),
   adjustStock: (adj: any) => ipcRenderer.invoke('adjust-stock', adj),
   getActiveBatches: () => ipcRenderer.invoke('get-active-batches'),
-  getLowStock: (threshold: number) => ipcRenderer.invoke('get-low-stock', threshold),
+  getLowStockProducts: (threshold: number) => ipcRenderer.invoke('get-low-stock', threshold),
+  getProductAdjustments: (productId: number) =>
+    ipcRenderer.invoke('get-product-adjustments', productId),
+
+  // 🚀 VOIDS & RETURNS ENGINE
   voidReceipt: (id: string) => ipcRenderer.invoke('void-receipt', id),
+  processReturn: (payload: any) => ipcRenderer.invoke('process-return', payload),
+  getBillForReturn: (receiptId: string) => ipcRenderer.invoke('get-bill-for-return', receiptId),
 
-  // Add these inside the api object:
-  getDashboardMetrics: () => ipcRenderer.invoke('getDashboardMetrics'),
-  getRecentTransactions: (limit: number) => ipcRenderer.invoke('getRecentTransactions', limit),
+  // 🚀 GRN & BATCH QUERIES
+  processGRN: (payload: any) => ipcRenderer.invoke('process-grn', payload),
+  getSupplierInvoices: (supplierId: number) =>
+    ipcRenderer.invoke('get-supplier-invoices', supplierId),
+  getInvoiceItems: (invoiceId: number) => ipcRenderer.invoke('get-invoice-items', invoiceId),
+  getProductBatches: (productId: number) => ipcRenderer.invoke('get-product-batches', productId),
 
-  getSalesHistory: (dateStr: string, search: string) =>
-    ipcRenderer.invoke('getSalesHistory', dateStr, search),
-  getReceiptDetails: (receiptId: string) => ipcRenderer.invoke('getReceiptDetails', receiptId)
+  // --- REPORTS & DASHBOARD ---
+  getDashboardMetrics: () => ipcRenderer.invoke('get-dashboard-metrics'),
+  getChartData: (filter: string) => ipcRenderer.invoke('get-chart-data', filter),
+  getTopSellers: () => ipcRenderer.invoke('get-top-sellers'),
+  getLowStockAlerts: () => ipcRenderer.invoke('get-dashboard-low-stock'),
+  getAuditLogs: (startDate: string, endDate: string) =>
+    ipcRenderer.invoke('get-audit-logs', startDate, endDate),
+
+  // Sales Ledger Queries
+  getTodaySales: () => ipcRenderer.invoke('get-today-sales'),
+  getReceiptItems: (receiptId: string) => ipcRenderer.invoke('get-receipt-items', receiptId),
+  getSalesHistory: (startDate: string, endDate: string, search: string) =>
+    ipcRenderer.invoke('getSalesHistory', startDate, endDate, search),
+  getReceiptDetails: (receiptId: string) => ipcRenderer.invoke('getReceiptDetails', receiptId),
+
+  getPendingCreditAccounts: () => ipcRenderer.invoke('get-pending-credit'),
+  getCustomerCreditBills: (name: string) => ipcRenderer.invoke('get-customer-credit-bills', name),
+  processCreditPayment: (name: string, amount: number) =>
+    ipcRenderer.invoke('process-credit-payment', name, amount)
 }
 
 // ==========================================
 // SECURE EXPOSURE LOGIC
 // ==========================================
-// This safely attaches our bridge to the React `window` object
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
@@ -59,8 +84,8 @@ if (process.contextIsolated) {
     console.error(error)
   }
 } else {
-  // @ts-ignore (define in dts)
+  // @ts-ignore
   window.electron = electronAPI
-  // @ts-ignore (define in dts)
+  // @ts-ignore
   window.api = api
 }

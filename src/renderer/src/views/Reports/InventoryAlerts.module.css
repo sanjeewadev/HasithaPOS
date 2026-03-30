@@ -1,0 +1,159 @@
+/* src/renderer/src/views/Reports/InventoryAlerts.module.css */
+
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding-right: 5px; /* Leaves room for scrollbar */
+}
+
+.panel {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+}
+
+.panelHeader {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--bg-canvas);
+  font-weight: 900;
+  color: var(--text-main);
+  font-size: 18px;
+  background: #ffffff;
+  text-transform: uppercase;
+}
+
+.listWrapper {
+  flex: 1;
+  overflow-y: auto;
+  padding: 30px;
+  background: #f8fafc;
+}
+
+/* --- SECTION STYLES --- */
+.alertSection {
+  margin-bottom: 40px;
+}
+
+.sectionTitle {
+  margin-top: 0;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  font-size: 16px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.textDanger {
+  color: #dc2626;
+  border-bottom: 2px solid #fecaca;
+}
+.textWarning {
+  color: #d97706;
+  border-bottom: 2px solid #fde68a;
+}
+
+/* --- CARD GRID --- */
+.cardGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.alertCard {
+  background: #ffffff;
+  padding: 16px 20px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+.alertCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.dangerCard {
+  border: 1px solid #fecaca;
+  border-left: 6px solid #dc2626;
+}
+.warningCard {
+  border: 1px solid #fde68a;
+  border-left: 6px solid #f59e0b;
+}
+
+/* --- ITEM INFO --- */
+.itemInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.itemName {
+  font-weight: 800;
+  color: var(--text-main);
+  font-size: 16px;
+}
+
+.itemCode {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: monospace;
+  font-weight: 600;
+}
+
+/* --- BADGES --- */
+.statusBadge {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 900;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.dangerBadge {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fee2e2;
+}
+.warningBadge {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fef3c7;
+}
+
+/* --- EMPTY STATE --- */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 50px;
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  margin-bottom: 15px;
+}
+
+.emptyState h2 {
+  color: #059669;
+  margin: 0 0 10px 0;
+  font-weight: 900;
+}
+
+.emptyState p {
+  color: var(--text-muted);
+  font-weight: 600;
+  margin: 0;
+}

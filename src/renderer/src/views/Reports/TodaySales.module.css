@@ -1,125 +1,48 @@
-/* src/renderer/src/views/Reports/SalesHistory.module.css */
 .container {
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding-bottom: 10px;
 }
-
-/* --- TOP PANEL --- */
-.topPanel {
+.panel {
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  padding: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: var(--shadow-sm);
-}
-
-.filterGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  flex: 1;
-}
-.dateFilters {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 700;
-  color: var(--text-muted);
-  font-size: 13px;
-  text-transform: uppercase;
-}
-.dateInput {
-  padding: 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-family: inherit;
-  font-size: 14px;
-  background: var(--bg-canvas);
-  color: var(--text-main);
-}
-.loadBtn {
-  padding: 10px 20px;
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-weight: 800;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.loadBtn:hover {
-  filter: brightness(0.9);
-}
-.loadBtn:disabled {
-  background: var(--text-muted);
-  cursor: not-allowed;
-}
-
-.searchInput {
-  max-width: 400px;
-  padding: 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 14px;
-  background: var(--bg-canvas);
-  transition: 0.2s;
-}
-.searchInput:focus {
-  border-color: var(--primary);
-  outline: none;
-  background: var(--bg-surface);
-}
-
-.summaryGroup {
-  display: flex;
-  gap: 20px;
-  padding-left: 20px;
-  border-left: 2px solid var(--border-color);
-}
-.summaryBox {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-.summaryLabel {
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--text-muted);
-  text-transform: uppercase;
-}
-.summaryValueSuccess {
-  font-size: 24px;
-  font-weight: 900;
-  color: #10b981;
-}
-.summaryValueDanger {
-  font-size: 24px;
-  font-weight: 900;
-  color: #ef4444;
-}
-
-/* --- MAIN PANEL & TABLE --- */
-.mainPanel {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
   flex: 1;
   box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.panelTitle {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 20px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.refreshBtn {
+  padding: 8px 16px;
+  background: var(--bg-canvas);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
 .tableWrapper {
   flex: 1;
   overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
 }
-
 .classicTable {
   width: 100%;
   border-collapse: collapse;
@@ -128,29 +51,21 @@
 .classicTable th {
   background: var(--bg-canvas);
   color: var(--text-muted);
-  padding: 14px 16px;
+  padding: 12px 16px;
   text-align: left;
   font-size: 11px;
   text-transform: uppercase;
   position: sticky;
   top: 0;
   border-bottom: 1px solid var(--border-color);
-  z-index: 1;
 }
 .classicTable td {
-  padding: 16px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--border-color);
   color: var(--text-main);
 }
 
-.emptyMsg {
-  text-align: center;
-  padding: 50px !important;
-  color: var(--text-muted);
-  font-weight: 600;
-}
-
-/* Badges & Status */
+/* Status Styles */
 .voidedRow td {
   opacity: 0.5;
   background: #f8fafc;
@@ -165,6 +80,7 @@
   font-weight: 900;
   font-size: 12px;
 }
+
 .cashBadge {
   background: #dcfce7;
   color: #15803d;
@@ -182,22 +98,26 @@
   font-weight: 800;
 }
 
-.viewBtn {
+.actionBtn {
   background: transparent;
-  border: 1px solid var(--primary);
-  padding: 8px 16px;
+  border: 1px solid var(--border-color);
+  padding: 6px 12px;
   border-radius: 4px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   color: var(--primary);
+  margin-left: 8px;
   font-size: 11px;
-  transition: 0.2s;
 }
-.viewBtn:hover {
-  background: rgba(37, 99, 235, 0.1);
+.voidBtn {
+  color: #ef4444;
+}
+.voidBtn:hover {
+  background: #fef2f2;
+  border-color: #ef4444;
 }
 
-/* --- MODAL --- */
+/* Modal Styles */
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -216,9 +136,6 @@
   border-radius: 12px;
   overflow: hidden;
   box-shadow: var(--shadow-lg);
-  display: flex;
-  flex-direction: column;
-  max-height: 90vh;
 }
 .modalHeader {
   padding: 20px;
@@ -228,19 +145,8 @@
   justify-content: space-between;
   align-items: center;
 }
-.dangerBanner {
-  background: #fef2f2;
-  color: #dc2626;
-  padding: 10px 20px;
-  font-weight: 800;
-  font-size: 13px;
-  text-align: center;
-  border-bottom: 1px solid #fecaca;
-}
 .modalBody {
   padding: 20px;
-  overflow-y: auto;
-  flex: 1;
 }
 .modalSummary {
   margin-top: 20px;
@@ -261,7 +167,6 @@
 .modalFooter {
   padding: 15px 20px;
   border-top: 1px solid var(--border-color);
-  background: var(--bg-canvas);
   display: flex;
   justify-content: flex-end;
   gap: 10px;

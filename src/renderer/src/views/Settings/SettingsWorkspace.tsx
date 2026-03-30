@@ -1,9 +1,7 @@
 // src/renderer/src/views/Settings/SettingsWorkspace.tsx
 import { useState } from 'react'
-// REUSING the CSS from Reports to keep code perfectly DRY (Don't Repeat Yourself)
-import styles from '../Reports/ReportsWorkspace.module.css'
+import styles from '../../styles/SharedSidebar.module.css' // Using shared CSS!
 import { useAuth } from '../../store/AuthContext'
-
 import UserManager from './UserManager'
 
 export default function SettingsWorkspace() {
@@ -16,9 +14,9 @@ export default function SettingsWorkspace() {
         return <UserManager />
       case 'System':
         return (
-          <div className={styles.classicCard}>
-            <h2 style={{ marginTop: 0, color: '#1E293B' }}>System Preferences</h2>
-            <p style={{ color: '#64748B' }}>
+          <div className={styles.modernCard}>
+            <h2 style={{ marginTop: 0, color: 'var(--text-main)' }}>System Preferences</h2>
+            <p style={{ color: 'var(--text-muted)' }}>
               Printer configs, Cloud Sync, and Local Backups will go here...
             </p>
           </div>
@@ -33,18 +31,40 @@ export default function SettingsWorkspace() {
       <aside className={styles.sidebar}>
         <div className={styles.menuHeader}>Administration</div>
 
-        {/* Only Admin/SuperAdmin should normally see Users, but we'll secure the data later */}
         <button
           className={`${styles.navButton} ${activeTab === 'Users' ? styles.activeBtn : ''}`}
           onClick={() => setActiveTab('Users')}
         >
-          <span>👥</span> User Accounts
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          User Accounts
         </button>
+
         <button
           className={`${styles.navButton} ${activeTab === 'System' ? styles.activeBtn : ''}`}
           onClick={() => setActiveTab('System')}
         >
-          <span>⚙️</span> System & Backups
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          System & Backups
         </button>
       </aside>
 

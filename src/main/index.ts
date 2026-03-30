@@ -1,10 +1,9 @@
+// src/main/index.ts
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { initDatabase } from './database'
-import { getSalesHistory, getReceiptDetails } from './database'
-import { getDashboardMetrics, getRecentTransactions } from './database'
 
 // IMPORT OUR NEW REPOSITORIES
 import * as userRepo from './repositories/userRepo'
@@ -12,6 +11,7 @@ import * as catRepo from './repositories/categoryRepo'
 import * as supRepo from './repositories/supplierRepo'
 import * as prodRepo from './repositories/productRepo'
 import * as stockRepo from './repositories/stockRepo'
+import * as reportRepo from './repositories/reportRepo'
 
 // 1. SINGLE INSTANCE LOCK (Replaces your C# Mutex)
 const gotTheLock = app.requestSingleInstanceLock()
@@ -25,7 +25,7 @@ function createWindow(): void {
     height: 768,
     show: false,
     autoHideMenuBar: true,
-    titleBarStyle: 'hidden', // <-- HIDES THE DEFAULT WINDOWS BAR
+    titleBarStyle: 'hidden',
     frame: false,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
@@ -35,7 +35,7 @@ function createWindow(): void {
   })
 
   mainWindow.on('ready-to-show', () => {
-    mainWindow.maximize() // Start maximized just like WPF
+    mainWindow.maximize()
     mainWindow.show()
   })
 
@@ -82,30 +82,51 @@ app.whenReady().then(() => {
   ipcMain.handle('update-product', (_, prod) => prodRepo.updateProduct(prod))
   ipcMain.handle('delete-product', (_, id) => prodRepo.deleteProduct(id))
 
-  // ... Products listeners ...
-
-  // Stock & Transactions
+  // Stock, Checkout & Adjustments
   ipcMain.handle('process-sale', (_, txn, movs) => stockRepo.processCompleteSale(txn, movs))
   ipcMain.handle('receive-stock', (_, mov) => stockRepo.receiveStock(mov))
   ipcMain.handle('adjust-stock', (_, adj) => stockRepo.adjustStock(adj))
   ipcMain.handle('get-active-batches', () => stockRepo.getActiveBatches())
   ipcMain.handle('get-low-stock', (_, threshold) => stockRepo.getLowStockProducts(threshold))
+  ipcMain.handle('get-product-adjustments', (_, productId) =>
+    stockRepo.getProductAdjustments(productId)
+  )
+
+  // 🚀 VOIDS & RETURNS ENGINE
   ipcMain.handle('void-receipt', (_, id) => stockRepo.voidReceipt(id))
+  ipcMain.handle('process-return', (_, payload) => stockRepo.processReturn(payload))
+  ipcMain.handle('get-bill-for-return', (_, receiptId) => reportRepo.getBillForReturn(receiptId))
 
-  ipcMain.handle('getDashboardMetrics', async () => {
-    return await getDashboardMetrics()
-  })
+  // 🚀 GRN ENGINE
+  ipcMain.handle('process-grn', (_, payload) => stockRepo.processGRN(payload))
+  ipcMain.handle('get-supplier-invoices', (_, supplierId) =>
+    stockRepo.getSupplierInvoices(supplierId)
+  )
+  ipcMain.handle('get-invoice-items', (_, invoiceId) => stockRepo.getInvoiceItems(invoiceId))
+  ipcMain.handle('get-product-batches', (_, productId) => stockRepo.getProductBatches(productId))
 
-  ipcMain.handle('getRecentTransactions', async (_, limit) => {
-    return await getRecentTransactions(limit)
-  })
+  // --- REPORTS & DASHBOARDS ---
+  ipcMain.handle('get-dashboard-metrics', () => reportRepo.getDashboardMetrics())
+  ipcMain.handle('get-chart-data', (_, filter) => reportRepo.getChartData(filter))
+  ipcMain.handle('get-top-sellers', () => reportRepo.getTopSellers(5))
+  ipcMain.handle('get-dashboard-low-stock', () => reportRepo.getLowStockAlerts(5))
 
-  ipcMain.handle('getSalesHistory', async (_, dateStr, search) => {
-    return getSalesHistory(dateStr, search)
-  })
-  ipcMain.handle('getReceiptDetails', async (_, receiptId) => {
-    return getReceiptDetails(receiptId)
-  })
+  // Sales Ledger Queries
+  ipcMain.handle('get-today-sales', () => reportRepo.getTodaySales())
+  ipcMain.handle('get-receipt-items', (_, receiptId) => reportRepo.getReceiptItems(receiptId))
+  ipcMain.handle('getSalesHistory', (_, startDate, endDate, search) =>
+    reportRepo.getSalesHistory(startDate, endDate, search)
+  )
+  ipcMain.handle('getReceiptDetails', (_, receiptId) => reportRepo.getReceiptDetails(receiptId))
+
+  ipcMain.handle('get-pending-credit', () => reportRepo.getPendingCreditAccounts())
+  ipcMain.handle('get-customer-credit-bills', (_, name) => reportRepo.getCustomerCreditBills(name))
+  ipcMain.handle('process-credit-payment', (_, name, amount) =>
+    reportRepo.processCreditPayment(name, amount)
+  )
+  ipcMain.handle('get-audit-logs', (_, startDate, endDate) =>
+    reportRepo.getAuditLogs(startDate, endDate)
+  )
 
   // --- END LISTENERS ---
 

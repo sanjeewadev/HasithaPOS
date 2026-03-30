@@ -1,206 +1,131 @@
 // src/renderer/src/views/Reports/Dashboard.tsx
-import { useState, useEffect } from 'react'
-import { Product } from '../../types/models'
+import React, { useState, useEffect } from 'react'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts'
 import styles from './Dashboard.module.css'
 
 export default function Dashboard() {
-  const [products, setProducts] = useState<Product[]>([])
-
-  // State for our live database metrics
-  const [metrics, setMetrics] = useState({ todaySales: 0, billsToday: 0, pendingCredit: 0 })
-  const [recentTx, setRecentTx] = useState<any[]>([])
+  const [metrics, setMetrics] = useState({
+    grossSales: 0,
+    netProfit: 0,
+    totalBills: 0,
+    pendingCredit: 0
+  })
+  const [chartData, setChartData] = useState<any[]>([])
+  const [chartFilter, setChartFilter] = useState<'7_days' | 'this_month'>('7_days')
 
   const loadData = async () => {
     try {
       // @ts-ignore
-      const prodData = await window.api.getProducts()
+      setMetrics(await window.api.getDashboardMetrics())
       // @ts-ignore
-      const metricsData = await window.api.getDashboardMetrics()
-      // @ts-ignore
-      const txData = await window.api.getRecentTransactions(5) // Get latest 5 sales
-
-      setProducts(prodData)
-      setMetrics(metricsData)
-      setRecentTx(txData)
+      setChartData(await window.api.getChartData(chartFilter))
     } catch (error) {
       console.error('Failed to load dashboard data', error)
     }
   }
 
+  // Reload data when the component mounts or when the chart filter changes
   useEffect(() => {
     loadData()
-    // Auto-refresh the dashboard every 30 seconds so it's always live
-    const interval = setInterval(loadData, 30000)
+    const interval = setInterval(loadData, 30000) // Auto-refresh every 30 seconds
     return () => clearInterval(interval)
-  }, [])
+  }, [chartFilter])
 
-  // Calculate Low Stock Alerts (Products with less than 10 quantity)
-  const lowStockItems = products.filter((p) => p.Quantity < 10 && p.Quantity > 0)
-  const outOfStockItems = products.filter((p) => p.Quantity <= 0)
+  // Custom formatter for the chart tooltips and axes
+  const formatCurrency = (value: number) => `Rs ${value.toLocaleString()}`
 
   return (
     <div className={styles.container}>
-      {/* --- KPI CARDS --- */}
+      {/* --- TOP: THE KPI RIBBON --- */}
       <div className={styles.kpiGrid}>
+        <div className={`${styles.kpiCard} ${styles.primary}`}>
+          <div className={styles.kpiTitle}>Today's Gross Sales</div>
+          <div className={styles.kpiValue}>Rs {(metrics.grossSales || 0).toFixed(2)}</div>
+        </div>
+
         <div className={`${styles.kpiCard} ${styles.success}`}>
-          <div className={styles.kpiTitle}>Today's Sales (Cash)</div>
-          <div className={`${styles.kpiValue} ${styles.success}`}>
-            Rs {(metrics.todaySales || 0).toFixed(2)}
-          </div>
+          <div className={styles.kpiTitle}>Today's Net Profit</div>
+          <div className={styles.kpiValue}>Rs {(metrics.netProfit || 0).toFixed(2)}</div>
         </div>
 
         <div className={styles.kpiCard}>
           <div className={styles.kpiTitle}>Total Bills Cut Today</div>
-          <div className={styles.kpiValue}>{metrics.billsToday || 0}</div>
+          <div className={styles.kpiValue} style={{ color: 'var(--text-main)' }}>
+            {metrics.totalBills || 0}
+          </div>
         </div>
 
         <div className={`${styles.kpiCard} ${styles.warning}`}>
-          <div className={styles.kpiTitle}>Pending Credit Collections</div>
-          <div className={styles.kpiValue} style={{ color: '#D97706' }}>
-            Rs {(metrics.pendingCredit || 0).toFixed(2)}
-          </div>
-        </div>
-
-        <div className={`${styles.kpiCard} ${styles.danger}`}>
-          <div className={styles.kpiTitle}>Out of Stock Items</div>
-          <div className={`${styles.kpiValue} ${styles.danger}`}>{outOfStockItems.length}</div>
+          <div className={styles.kpiTitle}>Pending Credit Owed To You</div>
+          <div className={styles.kpiValue}>Rs {(metrics.pendingCredit || 0).toFixed(2)}</div>
         </div>
       </div>
 
-      {/* --- BOTTOM SECTIONS --- */}
-      <div className={styles.bottomGrid}>
-        {/* Left: Recent Transactions Table */}
-        <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <span>RECENT TRANSACTIONS (LIVE)</span>
-          </div>
-          <div className={styles.tableWrapper}>
-            <table className={styles.classicTable}>
-              <thead>
-                <tr>
-                  <th>TIME</th>
-                  <th>RECEIPT ID</th>
-                  <th>CUSTOMER</th>
-                  <th>TOTAL</th>
-                  <th>STATUS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentTx.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}
-                    >
-                      No sales yet today.
-                    </td>
-                  </tr>
-                ) : (
-                  recentTx.map((tx) => {
-                    // Format the timestamp nicely (e.g., "10:45 AM")
-                    const time = new Date(tx.TransactionDate).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })
-
-                    return (
-                      <tr key={tx.ReceiptId}>
-                        <td style={{ color: '#64748B' }}>{time}</td>
-                        <td style={{ fontWeight: 'bold' }}>{tx.ReceiptId}</td>
-                        <td>{tx.CustomerName || 'Walk-in'}</td>
-                        <td style={{ fontWeight: 'bold' }}>Rs {tx.TotalAmount.toFixed(2)}</td>
-                        <td>
-                          {tx.Status === 0 ? (
-                            <span className={styles.statusPaid}>PAID</span>
-                          ) : (
-                            <span
-                              style={{
-                                background: '#FEF3C7',
-                                color: '#D97706',
-                                padding: '4px 8px',
-                                borderRadius: '4px',
-                                fontWeight: 'bold',
-                                fontSize: '12px'
-                              }}
-                            >
-                              PENDING
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+      {/* --- MIDDLE: THE INTERACTIVE PROFIT CHART (FULL SCREEN) --- */}
+      <div className={styles.chartCard}>
+        <div className={styles.cardHeader}>
+          <div className={styles.cardTitle}>Revenue vs. Profit Analysis</div>
+          <select
+            className={styles.chartSelect}
+            value={chartFilter}
+            onChange={(e) => setChartFilter(e.target.value as any)}
+          >
+            <option value="7_days">Last 7 Days</option>
+            <option value="this_month">This Month</option>
+          </select>
         </div>
-
-        {/* Right: Low Stock Alerts */}
-        <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <span style={{ color: '#DC2626' }}>⚠️ INVENTORY ALERTS</span>
-          </div>
-          <div className={styles.tableWrapper}>
-            {outOfStockItems.map((p) => (
-              <div key={`out-${p.Id}`} className={styles.alertItem}>
-                <div>
-                  <div style={{ fontWeight: 'bold', color: '#1E293B', fontSize: '14px' }}>
-                    {p.Name}
-                  </div>
-                  <div style={{ color: '#64748B', fontSize: '12px' }}>{p.Barcode}</div>
-                </div>
-                <div
-                  style={{
-                    background: '#FEE2E2',
-                    color: '#DC2626',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    fontWeight: 'bold',
-                    fontSize: '12px'
-                  }}
-                >
-                  EMPTY
-                </div>
-              </div>
-            ))}
-
-            {lowStockItems.map((p) => (
-              <div key={`low-${p.Id}`} className={styles.alertItem}>
-                <div>
-                  <div style={{ fontWeight: 'bold', color: '#1E293B', fontSize: '14px' }}>
-                    {p.Name}
-                  </div>
-                  <div style={{ color: '#64748B', fontSize: '12px' }}>{p.Barcode}</div>
-                </div>
-                <div
-                  style={{
-                    background: '#FEF3C7',
-                    color: '#D97706',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    fontWeight: 'bold',
-                    fontSize: '12px'
-                  }}
-                >
-                  ONLY {p.Quantity} LEFT
-                </div>
-              </div>
-            ))}
-
-            {outOfStockItems.length === 0 && lowStockItems.length === 0 && (
-              <div
-                style={{
-                  padding: '30px',
-                  textAlign: 'center',
-                  color: '#16A34A',
-                  fontWeight: 'bold'
+        <div className={styles.chartWrapper}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 10, right: 10, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+              <XAxis
+                dataKey="dateLabel"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#64748b', fontSize: 12 }}
+                dy={10}
+              />
+              <YAxis
+                tickFormatter={formatCurrency}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#64748b', fontSize: 12 }}
+              />
+              <Tooltip
+                cursor={{ fill: 'rgba(241, 245, 249, 0.5)' }}
+                contentStyle={{
+                  borderRadius: '8px',
+                  border: 'none',
+                  boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
                 }}
-              >
-                All stock levels are healthy!
-              </div>
-            )}
-          </div>
+                formatter={(value: any) => [`Rs ${Number(value).toFixed(2)}`, '']}
+              />
+              <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+              <Bar
+                dataKey="sales"
+                name="Gross Sales"
+                fill="#3b82f6"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={50}
+              />
+              <Bar
+                dataKey="profit"
+                name="Net Profit"
+                fill="#10b981"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={50}
+              />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>

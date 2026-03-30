@@ -9,6 +9,7 @@ export function getAllProducts() {
     FROM Products p 
     LEFT JOIN Categories c ON p.CategoryId = c.Id 
     WHERE p.IsActive = 1
+    ORDER BY p.Name ASC
   `
     )
     .all()
