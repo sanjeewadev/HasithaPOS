@@ -16,7 +16,6 @@ export default function Dashboard() {
   const [metrics, setMetrics] = useState({
     grossSales: 0,
     netProfit: 0,
-    totalBills: 0,
     pendingCredit: 0
   })
   const [chartData, setChartData] = useState<any[]>([])
@@ -33,19 +32,17 @@ export default function Dashboard() {
     }
   }
 
-  // Reload data when the component mounts or when the chart filter changes
   useEffect(() => {
     loadData()
-    const interval = setInterval(loadData, 30000) // Auto-refresh every 30 seconds
+    const interval = setInterval(loadData, 30000)
     return () => clearInterval(interval)
   }, [chartFilter])
 
-  // Custom formatter for the chart tooltips and axes
   const formatCurrency = (value: number) => `Rs ${value.toLocaleString()}`
 
   return (
     <div className={styles.container}>
-      {/* --- TOP: THE KPI RIBBON --- */}
+      {/* --- TOP: THE KPI RIBBON (NOW 3 CARDS) --- */}
       <div className={styles.kpiGrid}>
         <div className={`${styles.kpiCard} ${styles.primary}`}>
           <div className={styles.kpiTitle}>Today's Gross Sales</div>
@@ -55,13 +52,6 @@ export default function Dashboard() {
         <div className={`${styles.kpiCard} ${styles.success}`}>
           <div className={styles.kpiTitle}>Today's Net Profit</div>
           <div className={styles.kpiValue}>Rs {(metrics.netProfit || 0).toFixed(2)}</div>
-        </div>
-
-        <div className={styles.kpiCard}>
-          <div className={styles.kpiTitle}>Total Bills Cut Today</div>
-          <div className={styles.kpiValue} style={{ color: 'var(--text-main)' }}>
-            {metrics.totalBills || 0}
-          </div>
         </div>
 
         <div className={`${styles.kpiCard} ${styles.warning}`}>
@@ -112,7 +102,7 @@ export default function Dashboard() {
               <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
               <Bar
                 dataKey="sales"
-                name="Gross Sales"
+                name="Gross Revenue"
                 fill="#3b82f6"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={50}

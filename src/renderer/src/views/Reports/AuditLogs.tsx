@@ -196,25 +196,36 @@ export default function AuditLogs() {
                   const details = getEventDetails(log)
                   return (
                     <tr key={log.Id}>
-                      <td style={{ color: 'var(--text-muted)' }}>
+                      <td style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>
                         {new Date(log.Date).toLocaleString()}
                       </td>
                       <td>{details.badge}</td>
-                      <td style={{ fontWeight: 700 }}>{log.ProductName}</td>
+                      <td style={{ fontWeight: 800 }}>{log.ProductName}</td>
                       <td style={{ fontSize: '12px' }}>
                         {log.ReceiptId && (
-                          <strong>
+                          <strong style={{ color: 'var(--primary)', fontFamily: 'monospace' }}>
                             {log.ReceiptId} <br />
                           </strong>
                         )}
-                        <span style={{ color: 'var(--text-muted)' }}>{log.Note || '-'}</span>
+                        <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>
+                          {log.Note || '-'}
+                        </span>
                       </td>
                       <td
                         style={{ textAlign: 'center', fontWeight: 900, fontSize: '16px' }}
                         className={details.stockClass}
                       >
                         {details.stockDir}
-                        {log.Quantity} <span style={{ fontSize: '11px' }}>{log.Unit}</span>
+                        {log.Quantity}{' '}
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 'normal',
+                            color: 'var(--text-muted)'
+                          }}
+                        >
+                          {log.Unit}
+                        </span>
                       </td>
                       <td style={{ textAlign: 'right' }}>
                         <div
@@ -227,7 +238,9 @@ export default function AuditLogs() {
                         >
                           {details.impactLabel}
                         </div>
-                        <div style={{ fontWeight: 800, color: 'var(--text-main)' }}>
+                        <div
+                          style={{ fontWeight: 900, color: 'var(--text-main)', fontSize: '16px' }}
+                        >
                           Rs {details.financial.toFixed(2)}
                         </div>
                       </td>

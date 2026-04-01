@@ -2,59 +2,50 @@
 
 .container {
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  padding-right: 5px; /* Leaves room for scrollbar */
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* 🚀 CREATES TWO EQUAL SIDE-BY-SIDE PANELS! */
+  gap: 20px;
+  padding-bottom: 10px;
+  padding-right: 5px;
 }
 
-.panel {
+/* --- THE DUAL PANELS --- */
+.alertPanel {
   background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
-  flex: 1;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
 
 .panelHeader {
   padding: 20px 24px;
-  border-bottom: 1px solid var(--bg-canvas);
   font-weight: 900;
-  color: var(--text-main);
-  font-size: 18px;
-  background: #ffffff;
-  text-transform: uppercase;
-}
-
-.listWrapper {
-  flex: 1;
-  overflow-y: auto;
-  padding: 30px;
-  background: #f8fafc;
-}
-
-/* --- SECTION STYLES --- */
-.alertSection {
-  margin-bottom: 40px;
-}
-
-.sectionTitle {
-  margin-top: 0;
-  margin-bottom: 15px;
-  padding-bottom: 8px;
   font-size: 16px;
-  font-weight: 800;
   text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
-.textDanger {
+.dangerHeader {
+  background: #fef2f2;
   color: #dc2626;
   border-bottom: 2px solid #fecaca;
 }
-.textWarning {
+.warningHeader {
+  background: #fffbeb;
   color: #d97706;
   border-bottom: 2px solid #fde68a;
+}
+
+/* --- SCROLLING LIST AREA --- */
+.listWrapper {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  background: #f8fafc;
 }
 
 /* --- CARD GRID --- */
@@ -100,22 +91,22 @@
 .itemName {
   font-weight: 800;
   color: var(--text-main);
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .itemCode {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 11px;
   font-family: monospace;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* --- BADGES --- */
 .statusBadge {
-  padding: 8px 16px;
+  padding: 6px 12px;
   border-radius: 6px;
   font-weight: 900;
-  font-size: 13px;
+  font-size: 11px;
   text-transform: uppercase;
 }
 
@@ -130,30 +121,33 @@
   border: 1px solid #fef3c7;
 }
 
-/* --- EMPTY STATE --- */
+/* --- EMPTY STATES --- */
 .emptyState {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100%;
-  padding: 50px;
+  padding: 40px;
   text-align: center;
 }
 
 .emptyIcon {
   font-size: 48px;
   margin-bottom: 15px;
+  opacity: 0.8;
 }
 
-.emptyState h2 {
-  color: #059669;
+.emptyState h3 {
+  color: var(--text-main);
   margin: 0 0 10px 0;
   font-weight: 900;
+  font-size: 20px;
 }
 
 .emptyState p {
   color: var(--text-muted);
   font-weight: 600;
+  font-size: 14px;
   margin: 0;
 }

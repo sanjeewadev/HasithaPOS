@@ -68,9 +68,11 @@ const api = {
   getReceiptDetails: (receiptId: string) => ipcRenderer.invoke('getReceiptDetails', receiptId),
 
   getPendingCreditAccounts: () => ipcRenderer.invoke('get-pending-credit'),
-  getCustomerCreditBills: (name: string) => ipcRenderer.invoke('get-customer-credit-bills', name),
-  processCreditPayment: (name: string, amount: number) =>
-    ipcRenderer.invoke('process-credit-payment', name, amount)
+  processCreditPayment: (receiptId: string, amount: number) =>
+    ipcRenderer.invoke('process-credit-payment', receiptId, amount),
+  // Find your stockRepo area and add:
+  processCompleteSale: (transaction: any, movements: any[]) =>
+    ipcRenderer.invoke('process-complete-sale', transaction, movements)
 }
 
 // ==========================================

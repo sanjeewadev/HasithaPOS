@@ -6,34 +6,31 @@ import { getDb } from '../database'
 // ==========================================
 export function getDashboardMetrics() {
   const db = getDb()
-  const today = new Date().toISOString().split('T')[0]
 
-  // 1 & 2. Today's Gross Sales & Net Profit
-  // We calculate this directly from StockMovements (Type 2 = Sold) to get exact cost vs price
   const salesData = db
     .prepare(
       `
-    SELECT 
-      SUM(Quantity * UnitPrice) as grossSales,
-      SUM(Quantity * (UnitPrice - UnitCost)) as netProfit
-    FROM StockMovements 
-    WHERE Type = 2 AND IsVoided = 0 AND Date LIKE ?
+    SELECT SUM(PaidAmount) as grossSales 
+    FROM SalesTransactions 
+    WHERE date(TransactionDate, 'localtime') = date('now', 'localtime') AND Status != 3
   `
     )
-    .get(`${today}%`) as { grossSales: number; netProfit: number }
+    .get() as { grossSales: number }
 
-  // 3. Total Bills Cut Today
-  const totalBills = db
+  const costData = db
     .prepare(
       `
-    SELECT COUNT(ReceiptId) as count 
-    FROM SalesTransactions 
-    WHERE TransactionDate LIKE ?
+    SELECT SUM(Quantity * UnitCost) as totalCost 
+    FROM StockMovements 
+    WHERE Type = 2 AND date(Date, 'localtime') = date('now', 'localtime') AND IsVoided = 0
   `
     )
-    .get(`${today}%`) as { count: number }
+    .get() as { totalCost: number }
 
-  // 4. Pending Credit Collections
+  const grossSales = salesData?.grossSales || 0
+  const totalCost = costData?.totalCost || 0
+  const netProfit = grossSales - totalCost
+
   const pendingCredit = db
     .prepare(
       `
@@ -45,9 +42,8 @@ export function getDashboardMetrics() {
     .get() as { total: number }
 
   return {
-    grossSales: salesData?.grossSales || 0,
-    netProfit: salesData?.netProfit || 0,
-    totalBills: totalBills?.count || 0,
+    grossSales: grossSales,
+    netProfit: netProfit,
     pendingCredit: pendingCredit?.total || 0
   }
 }
@@ -55,44 +51,47 @@ export function getDashboardMetrics() {
 // ==========================================
 // 📊 2. BUSINESS INTELLIGENCE (CHART & LISTS)
 // ==========================================
-
 export function getChartData(filter: '7_days' | 'this_month' = '7_days') {
   const db = getDb()
-
-  // By default, group by the last 7 days
   let dateModifier = '-7 days'
   if (filter === 'this_month') dateModifier = 'start of month'
 
-  // This powerful query groups all sales by day, and calculates exact Revenue and Profit per day!
   return db
     .prepare(
       `
+    WITH DailyRevenue AS (
+      SELECT date(TransactionDate, 'localtime') as dateLabel, SUM(PaidAmount) as sales
+      FROM SalesTransactions
+      WHERE Status != 3 AND date(TransactionDate, 'localtime') >= date('now', 'localtime', ?)
+      GROUP BY date(TransactionDate, 'localtime')
+    ),
+    DailyCost AS (
+      SELECT date(Date, 'localtime') as dateLabel, SUM(Quantity * UnitCost) as cost
+      FROM StockMovements
+      WHERE Type = 2 AND IsVoided = 0 AND date(Date, 'localtime') >= date('now', 'localtime', ?)
+      GROUP BY date(Date, 'localtime')
+    )
     SELECT 
-      date(Date) as dateLabel,
-      SUM(Quantity * UnitPrice) as sales,
-      SUM(Quantity * (UnitPrice - UnitCost)) as profit
-    FROM StockMovements
-    WHERE Type = 2 AND IsVoided = 0 AND date(Date) >= date('now', ?)
-    GROUP BY date(Date)
-    ORDER BY date(Date) ASC
+      r.dateLabel,
+      r.sales,
+      (r.sales - COALESCE(c.cost, 0)) as profit
+    FROM DailyRevenue r
+    LEFT JOIN DailyCost c ON r.dateLabel = c.dateLabel
+    ORDER BY r.dateLabel ASC
   `
     )
-    .all(dateModifier)
+    .all(dateModifier, dateModifier)
 }
 
 export function getTopSellers(limit: number = 5) {
   const db = getDb()
-  // Finds the products that brought in the most revenue this month
   return db
     .prepare(
       `
-    SELECT 
-      p.Name, 
-      SUM(m.Quantity) as TotalSold, 
-      SUM(m.Quantity * m.UnitPrice) as Revenue
+    SELECT p.Name, SUM(m.Quantity) as TotalSold, SUM(m.Quantity * m.UnitPrice) as Revenue
     FROM StockMovements m
     JOIN Products p ON m.ProductId = p.Id
-    WHERE m.Type = 2 AND m.IsVoided = 0 AND date(m.Date) >= date('now', 'start of month')
+    WHERE m.Type = 2 AND m.IsVoided = 0 AND date(m.Date, 'localtime') >= date('now', 'localtime', 'start of month')
     GROUP BY m.ProductId
     ORDER BY Revenue DESC
     LIMIT ?
@@ -101,20 +100,19 @@ export function getTopSellers(limit: number = 5) {
     .all(limit)
 }
 
-export function getLowStockAlerts(limit: number = 5) {
+// 🚀 UPGRADED: Pulls ALL items at or below threshold (Default: 10)
+export function getLowStockAlerts(threshold: number = 10) {
   const db = getDb()
-  // Finds active products closest to running out of stock
   return db
     .prepare(
       `
-    SELECT Id, Name, Quantity, Unit 
-    FROM Products 
-    WHERE IsActive = 1 AND Quantity <= 15
-    ORDER BY Quantity ASC 
-    LIMIT ?
-  `
+      SELECT Id, Name, Barcode, Quantity, Unit 
+      FROM Products 
+      WHERE IsActive = 1 AND Quantity <= ?
+      ORDER BY Quantity ASC 
+    `
     )
-    .all(limit)
+    .all(threshold)
 }
 
 // ==========================================
@@ -122,20 +120,13 @@ export function getLowStockAlerts(limit: number = 5) {
 // ==========================================
 export function getSalesHistory(startDate: string, endDate: string, search: string) {
   const db = getDb()
-
-  // Base query: Filter strictly between the Start and End dates (inclusive)
-  let query = `
-    SELECT * FROM SalesTransactions 
-    WHERE date(TransactionDate) BETWEEN date(?) AND date(?)
-  `
+  let query = `SELECT * FROM SalesTransactions WHERE date(TransactionDate, 'localtime') BETWEEN date(?) AND date(?)`
   const params: any[] = [startDate, endDate]
 
-  // Add the search filter if the user typed something
   if (search) {
     query += ' AND (ReceiptId LIKE ? OR CustomerName LIKE ?)'
     params.push(`%${search}%`, `%${search}%`)
   }
-
   query += ' ORDER BY TransactionDate DESC'
   return db.prepare(query).all(...params)
 }
@@ -155,28 +146,26 @@ export function getReceiptDetails(receiptId: string) {
   `
     )
     .all(receiptId)
-
   return { transaction, items }
 }
 
 export function getTodaySales() {
-  const today = new Date().toISOString().split('T')[0]
   return getDb()
     .prepare(
       `
     SELECT * FROM SalesTransactions 
-    WHERE TransactionDate LIKE ? 
+    WHERE date(TransactionDate, 'localtime') = date('now', 'localtime')
     ORDER BY TransactionDate DESC
   `
     )
-    .all(today + '%')
+    .all()
 }
 
 export function getReceiptItems(receiptId: string) {
   return getDb()
     .prepare(
       `
-    SELECT m.*, p.Name as ProductName, p.Unit 
+    SELECT m.*, p.Name as ProductName, p.Unit, p.Barcode, p.SellingPrice as OriginalPrice 
     FROM StockMovements m
     JOIN Products p ON m.ProductId = p.Id
     WHERE m.ReceiptId = ? AND m.Type = 2
@@ -187,23 +176,12 @@ export function getReceiptItems(receiptId: string) {
 
 export function getBillForReturn(receiptId: string) {
   const db = getDb()
-
-  // 1. Get the main transaction
   const txn = db.prepare('SELECT * FROM SalesTransactions WHERE ReceiptId = ?').get(receiptId)
   if (!txn) return null
-
-  // 2. Get items and calculate "Already Returned" quantity
-  // We sum movements of Type 2 (Out) and subtract Type 4 (Return/In)
   const items = db
     .prepare(
       `
-    SELECT 
-      m.ProductId,
-      p.Name as ProductName,
-      p.Unit,
-      m.StockBatchId,
-      m.UnitPrice,
-      m.UnitCost,
+    SELECT m.ProductId, p.Name as ProductName, p.Unit, m.StockBatchId, m.UnitPrice, m.UnitCost,
       SUM(CASE WHEN m.Type = 2 THEN m.Quantity ELSE 0 END) as OriginalQty,
       SUM(CASE WHEN m.Type = 4 THEN m.Quantity ELSE 0 END) as ReturnedQty
     FROM StockMovements m
@@ -213,123 +191,74 @@ export function getBillForReturn(receiptId: string) {
   `
     )
     .all(receiptId)
-
   return { transaction: txn, items }
 }
 
 // ==========================================
-// 💳 4. CREDIT & DEBT MANAGEMENT
+// 💳 4. CREDIT & DEBT MANAGEMENT (🚀 REWRITTEN FOR INVOICES)
 // ==========================================
 
 export function getPendingCreditAccounts() {
   const db = getDb()
-
-  // This groups the debt by Customer Name!
+  // 🚀 FIX: No longer grouping by Customer. We return every individual unpaid invoice!
   return db
     .prepare(
       `
     SELECT 
+      ReceiptId,
+      TransactionDate,
       CustomerName,
-      COUNT(ReceiptId) as TotalUnpaidBills,
-      SUM(TotalAmount) as TotalCredit,
-      SUM(PaidAmount) as TotalPaid,
-      SUM(TotalAmount - PaidAmount) as TotalPending
+      TotalAmount as TotalCredit,
+      PaidAmount as TotalPaid,
+      (TotalAmount - PaidAmount) as TotalPending
     FROM SalesTransactions
-    WHERE IsCredit = 1 AND Status IN (1, 2) 
+    WHERE IsCredit = 1 
+      AND Status IN (1, 2) 
       AND (TotalAmount - PaidAmount) > 0
-      AND IsVoided = 0
-    GROUP BY CustomerName
-    ORDER BY TotalPending DESC
+    ORDER BY TransactionDate DESC
   `
     )
     .all()
 }
 
-export function getCustomerCreditBills(customerName: string) {
+// 🚀 FIX: Renamed the internal parameter to receiptId to apply payment to ONE exact bill.
+export function processCreditPayment(receiptId: string, amountToPay: number) {
   const db = getDb()
 
-  // Fetches the specific unpaid bills for a single customer
-  return db
-    .prepare(
+  const payTxn = db.transaction((rId, amount) => {
+    // 1. Double check the specific bill
+    const bill: any = db
+      .prepare('SELECT TotalAmount, PaidAmount FROM SalesTransactions WHERE ReceiptId = ?')
+      .get(rId)
+    if (!bill) throw new Error('Invoice not found!')
+
+    // 2. Safely apply payment and perfectly calculate new Status (0 = Fully Paid, 2 = Partially Paid)
+    db.prepare(
       `
-    SELECT * FROM SalesTransactions
-    WHERE IsCredit = 1 AND Status IN (1, 2) 
-      AND (TotalAmount - PaidAmount) > 0
-      AND CustomerName = ?
-      AND IsVoided = 0
-    ORDER BY TransactionDate ASC
-  `
-    )
-    .all(customerName)
-}
-
-export function processCreditPayment(customerName: string, amountToPay: number) {
-  const db = getDb()
-
-  const payTxn = db.transaction((name, amount) => {
-    let remainingPayment = amount
-
-    // 1. Fetch all unpaid bills for this customer, oldest first
-    const bills: any[] = db
-      .prepare(
-        `
-      SELECT ReceiptId, TotalAmount, PaidAmount 
-      FROM SalesTransactions
-      WHERE CustomerName = ? AND IsCredit = 1 AND Status != 3 AND (TotalAmount - PaidAmount) > 0
-      ORDER BY TransactionDate ASC
-    `
-      )
-      .all(name)
-
-    const updateBillStmt = db.prepare(`
       UPDATE SalesTransactions 
       SET PaidAmount = PaidAmount + ?, 
-          Status = CASE WHEN PaidAmount + ? >= TotalAmount THEN 2 ELSE Status END
+          Status = CASE WHEN PaidAmount + ? >= TotalAmount THEN 0 ELSE 2 END
       WHERE ReceiptId = ?
-    `)
-
-    // 2. Distribute the cash across the bills
-    for (const bill of bills) {
-      if (remainingPayment <= 0) break
-
-      const owedOnBill = bill.TotalAmount - bill.PaidAmount
-      const paymentForThisBill = Math.min(owedOnBill, remainingPayment)
-
-      updateBillStmt.run(paymentForThisBill, paymentForThisBill, bill.ReceiptId)
-      remainingPayment -= paymentForThisBill
-    }
+    `
+    ).run(amount, amount, rId)
   })
 
-  payTxn(customerName, amountToPay)
+  payTxn(receiptId, amountToPay)
   return { success: true }
 }
 
 // ==========================================
 // 🛡️ 5. AUDIT & SECURITY LOGS
 // ==========================================
-
 export function getAuditLogs(startDate: string, endDate: string) {
   const db = getDb()
-
   return db
     .prepare(
       `
-    SELECT 
-      m.Id,
-      m.Date,
-      m.Type,
-      m.Quantity,
-      m.UnitPrice,
-      m.UnitCost,
-      m.Note,
-      m.Reason,
-      m.IsVoided,
-      m.ReceiptId,
-      p.Name as ProductName,
-      p.Unit
+    SELECT m.Id, m.Date, m.Type, m.Quantity, m.UnitPrice, m.UnitCost, m.Note, m.Reason, m.IsVoided, m.ReceiptId, p.Name as ProductName, p.Unit
     FROM StockMovements m
     JOIN Products p ON m.ProductId = p.Id
-    WHERE date(m.Date) BETWEEN date(?) AND date(?)
+    WHERE date(m.Date, 'localtime') BETWEEN date(?) AND date(?)
       AND (m.Type IN (3, 4) OR m.IsVoided = 1)
     ORDER BY m.Date DESC
   `

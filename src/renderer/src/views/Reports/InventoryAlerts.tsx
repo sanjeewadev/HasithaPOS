@@ -4,14 +4,15 @@ import { Product } from '../../types/models'
 import styles from './InventoryAlerts.module.css'
 
 export default function InventoryAlerts() {
-  const [products, setProducts] = useState<Product[]>([])
+  const [alertItems, setAlertItems] = useState<Product[]>([])
 
   useEffect(() => {
     const loadData = async () => {
       try {
+        // 🚀 UPGRADED: Calling the fast, dedicated alerts query instead of ALL products!
         // @ts-ignore
-        const prodData = await window.api.getProducts()
-        setProducts(prodData)
+        const prodData = await window.api.getLowStockAlerts(10)
+        setAlertItems(prodData || [])
       } catch (error) {
         console.error('Failed to load products for alerts', error)
       }
@@ -19,68 +20,69 @@ export default function InventoryAlerts() {
     loadData()
   }, [])
 
-  // Thresholds
-  const outOfStockItems = products.filter((p) => p.Quantity <= 0)
-  const lowStockItems = products.filter((p) => p.Quantity > 0 && p.Quantity <= 10) // 10 is our low stock limit
+  // Automatically split the fast data into two distinct arrays
+  const outOfStockItems = alertItems.filter((p) => p.Quantity <= 0)
+  const lowStockItems = alertItems.filter((p) => p.Quantity > 0)
 
   return (
     <div className={styles.container}>
-      <div className={styles.panel}>
-        <div className={styles.panelHeader}>
-          <span>⚠️ Restocking Alerts</span>
+      {/* --- LEFT PANEL: OUT OF STOCK (CRITICAL) --- */}
+      <div className={styles.alertPanel}>
+        <div className={`${styles.panelHeader} ${styles.dangerHeader}`}>
+          <span>🚨 OUT OF STOCK ({outOfStockItems.length})</span>
         </div>
 
         <div className={styles.listWrapper}>
-          {/* 1. OUT OF STOCK (Highest Priority) */}
-          {outOfStockItems.length > 0 && (
-            <div className={styles.alertSection}>
-              <h3 className={`${styles.sectionTitle} ${styles.textDanger}`}>
-                Out of Stock ({outOfStockItems.length})
-              </h3>
-              <div className={styles.cardGrid}>
-                {outOfStockItems.map((p) => (
-                  <div key={p.Id} className={`${styles.alertCard} ${styles.dangerCard}`}>
-                    <div className={styles.itemInfo}>
-                      <span className={styles.itemName}>{p.Name}</span>
-                      <span className={styles.itemCode}>CODE: {p.Barcode || 'N/A'}</span>
-                    </div>
-                    <div className={`${styles.statusBadge} ${styles.dangerBadge}`}>
-                      EMPTY (0 {p.Unit})
-                    </div>
+          {outOfStockItems.length === 0 ? (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>👍</div>
+              <h3>Looking Good!</h3>
+              <p>No active products are out of stock.</p>
+            </div>
+          ) : (
+            <div className={styles.cardGrid}>
+              {outOfStockItems.map((p) => (
+                <div key={p.Id} className={`${styles.alertCard} ${styles.dangerCard}`}>
+                  <div className={styles.itemInfo}>
+                    <span className={styles.itemName}>{p.Name}</span>
+                    <span className={styles.itemCode}>CODE: {p.Barcode || 'N/A'}</span>
                   </div>
-                ))}
-              </div>
+                  <div className={`${styles.statusBadge} ${styles.dangerBadge}`}>
+                    EMPTY (0 {p.Unit})
+                  </div>
+                </div>
+              ))}
             </div>
           )}
+        </div>
+      </div>
 
-          {/* 2. LOW STOCK */}
-          {lowStockItems.length > 0 && (
-            <div className={styles.alertSection}>
-              <h3 className={`${styles.sectionTitle} ${styles.textWarning}`}>
-                Low Stock ({lowStockItems.length})
-              </h3>
-              <div className={styles.cardGrid}>
-                {lowStockItems.map((p) => (
-                  <div key={p.Id} className={`${styles.alertCard} ${styles.warningCard}`}>
-                    <div className={styles.itemInfo}>
-                      <span className={styles.itemName}>{p.Name}</span>
-                      <span className={styles.itemCode}>CODE: {p.Barcode || 'N/A'}</span>
-                    </div>
-                    <div className={`${styles.statusBadge} ${styles.warningBadge}`}>
-                      ONLY {p.Quantity} {p.Unit} LEFT
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+      {/* --- RIGHT PANEL: LOW STOCK (WARNING) --- */}
+      <div className={styles.alertPanel}>
+        <div className={`${styles.panelHeader} ${styles.warningHeader}`}>
+          <span>⚠️ LOW STOCK WARNINGS ({lowStockItems.length})</span>
+        </div>
 
-          {/* 3. PERFECT HEALTH (No Alerts) */}
-          {outOfStockItems.length === 0 && lowStockItems.length === 0 && (
+        <div className={styles.listWrapper}>
+          {lowStockItems.length === 0 ? (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>✅</div>
-              <h2>All Clear!</h2>
-              <p>All stock levels are currently healthy. No alerts to show.</p>
+              <h3>Well Stocked!</h3>
+              <p>No products are currently running low.</p>
+            </div>
+          ) : (
+            <div className={styles.cardGrid}>
+              {lowStockItems.map((p) => (
+                <div key={p.Id} className={`${styles.alertCard} ${styles.warningCard}`}>
+                  <div className={styles.itemInfo}>
+                    <span className={styles.itemName}>{p.Name}</span>
+                    <span className={styles.itemCode}>CODE: {p.Barcode || 'N/A'}</span>
+                  </div>
+                  <div className={`${styles.statusBadge} ${styles.warningBadge}`}>
+                    ONLY {p.Quantity} {p.Unit} LEFT
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

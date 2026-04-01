@@ -120,12 +120,15 @@ app.whenReady().then(() => {
   ipcMain.handle('getReceiptDetails', (_, receiptId) => reportRepo.getReceiptDetails(receiptId))
 
   ipcMain.handle('get-pending-credit', () => reportRepo.getPendingCreditAccounts())
-  ipcMain.handle('get-customer-credit-bills', (_, name) => reportRepo.getCustomerCreditBills(name))
-  ipcMain.handle('process-credit-payment', (_, name, amount) =>
-    reportRepo.processCreditPayment(name, amount)
+  ipcMain.handle('process-credit-payment', (_, receiptId, amount) =>
+    reportRepo.processCreditPayment(receiptId, amount)
   )
   ipcMain.handle('get-audit-logs', (_, startDate, endDate) =>
     reportRepo.getAuditLogs(startDate, endDate)
+  )
+  // Add this inside your ipcMain.handle section:
+  ipcMain.handle('process-complete-sale', (_, transaction, movements) =>
+    stockRepo.processCompleteSale(transaction, movements)
   )
 
   // --- END LISTENERS ---

@@ -116,9 +116,11 @@ export function processCompleteSale(transaction: any, movements: any[]) {
     `)
 
     for (const move of movs) {
+      // 🚀 FIX: Fetch CostPrice securely from the database, ignore the frontend!
       const batch: any = db
-        .prepare('SELECT RemainingQuantity FROM StockBatches WHERE Id = ?')
+        .prepare('SELECT RemainingQuantity, CostPrice FROM StockBatches WHERE Id = ?')
         .get(move.StockBatchId)
+
       if (!batch) throw new Error('Fatal Error: Source stock batch not found.')
       if (batch.RemainingQuantity < move.Quantity)
         throw new Error(`Cart out of sync! Only ${batch.RemainingQuantity} left.`)
@@ -134,10 +136,10 @@ export function processCompleteSale(transaction: any, movements: any[]) {
       insertMovementStmt.run(
         new Date().toISOString(),
         move.ProductId,
-        2,
+        2, // Type 2 = Sale Out
         move.Quantity,
-        move.UnitCost,
-        move.UnitPrice,
+        batch.CostPrice, // 🚀 SECURE: Uses the exact supplier buying price!
+        move.UnitPrice, // 🚀 Uses the final discounted selling price!
         move.StockBatchId,
         move.Note || '',
         txn.ReceiptId
@@ -253,7 +255,7 @@ export function getInvoiceItems(invoiceId: number) {
   return getDb()
     .prepare(
       `
-    SELECT b.*, p.Name as ProductName 
+    SELECT b.*, p.Name as ProductName, p.Barcode, p.Unit 
     FROM StockBatches b
     JOIN Products p ON b.ProductId = p.Id
     WHERE b.PurchaseInvoiceId = ?

@@ -11,7 +11,6 @@ interface ReturnItem {
   UnitCost: number
   OriginalQty: number
   ReturnedQty: number
-  // UI State for the form
   QtyToReturn: string
 }
 
@@ -44,10 +43,9 @@ export default function ReturnsCenter() {
 
       setBill(result.transaction)
 
-      // Map the items and add our 'QtyToReturn' state to each row
       const mappedItems = result.items.map((item: any) => ({
         ...item,
-        QtyToReturn: '' // Start blank
+        QtyToReturn: ''
       }))
       setItems(mappedItems)
     } catch (err) {
@@ -64,7 +62,6 @@ export default function ReturnsCenter() {
     const item = newItems[index]
     const maxReturnable = item.OriginalQty - item.ReturnedQty
 
-    // Allow empty string, or numbers up to the max returnable
     if (val === '' || /^\d*\.?\d*$/.test(val)) {
       const numVal = parseFloat(val) || 0
       if (numVal <= maxReturnable) {
@@ -86,7 +83,6 @@ export default function ReturnsCenter() {
 
   // --- 4. PROCESS THE RETURN ---
   const handleProcessReturn = async () => {
-    // Filter out items where the return qty is 0 or blank
     const itemsToReturn = items.filter((item) => (parseFloat(item.QtyToReturn) || 0) > 0)
 
     if (itemsToReturn.length === 0) {
@@ -95,7 +91,7 @@ export default function ReturnsCenter() {
 
     if (
       window.confirm(
-        `Process return for Rs ${totalRefundAmount.toFixed(2)}? Items will be added back to inventory.`
+        `Process return for Rs ${totalRefundAmount.toFixed(2)}?\n\nItems will be added back to inventory.`
       )
     ) {
       try {
@@ -114,9 +110,9 @@ export default function ReturnsCenter() {
 
         // @ts-ignore
         await window.api.processReturn(payload)
-        alert('Return processed successfully!')
+        alert('✅ Return processed successfully!')
 
-        // Refresh the view to show the new "Already Returned" numbers!
+        // Trigger a fake submit to refresh the view
         setSearchQuery(bill.ReceiptId)
         document
           .getElementById('searchForm')
@@ -160,7 +156,7 @@ export default function ReturnsCenter() {
             <div className={styles.billHeader}>
               <div>
                 <h2 style={{ margin: 0, fontSize: '24px', color: 'var(--text-main)' }}>
-                  {bill.ReceiptId}
+                  Receipt: {bill.ReceiptId}
                 </h2>
                 <div
                   style={{
@@ -171,7 +167,7 @@ export default function ReturnsCenter() {
                   }}
                 >
                   Date: {new Date(bill.TransactionDate).toLocaleString()} | Customer:{' '}
-                  {bill.CustomerName || 'Walk-in'}
+                  <span style={{ color: 'var(--primary)' }}>{bill.CustomerName || 'Walk-in'}</span>
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
@@ -227,13 +223,40 @@ export default function ReturnsCenter() {
                           Rs {item.UnitPrice.toFixed(2)}
                         </td>
                         <td style={{ fontWeight: 800 }}>
-                          {item.OriginalQty} {item.Unit}
+                          {item.OriginalQty}{' '}
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              color: 'var(--text-muted)',
+                              fontWeight: 'normal'
+                            }}
+                          >
+                            {item.Unit}
+                          </span>
                         </td>
                         <td style={{ color: 'var(--danger)', fontWeight: 700 }}>
-                          {item.ReturnedQty} {item.Unit}
+                          {item.ReturnedQty}{' '}
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              color: 'var(--text-muted)',
+                              fontWeight: 'normal'
+                            }}
+                          >
+                            {item.Unit}
+                          </span>
                         </td>
-                        <td style={{ fontWeight: 800 }}>
-                          {maxReturnable} {item.Unit}
+                        <td style={{ fontWeight: 800, color: 'var(--primary)' }}>
+                          {maxReturnable}{' '}
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              color: 'var(--text-muted)',
+                              fontWeight: 'normal'
+                            }}
+                          >
+                            {item.Unit}
+                          </span>
                         </td>
                         <td>
                           <input
@@ -246,7 +269,12 @@ export default function ReturnsCenter() {
                           />
                         </td>
                         <td
-                          style={{ textAlign: 'right', fontWeight: 800, color: 'var(--primary)' }}
+                          style={{
+                            textAlign: 'right',
+                            fontWeight: 900,
+                            color: 'var(--text-main)',
+                            fontSize: '16px'
+                          }}
                         >
                           Rs {refundLineTotal.toFixed(2)}
                         </td>
@@ -264,9 +292,10 @@ export default function ReturnsCenter() {
                   style={{
                     display: 'block',
                     fontSize: '12px',
-                    fontWeight: 700,
+                    fontWeight: 800,
                     color: 'var(--text-muted)',
-                    marginBottom: '5px'
+                    marginBottom: '5px',
+                    textTransform: 'uppercase'
                   }}
                 >
                   Return Reason / Note
@@ -276,7 +305,7 @@ export default function ReturnsCenter() {
                   className={styles.classicInput}
                   value={returnReason}
                   onChange={(e) => setReturnReason(e.target.value)}
-                  style={{ width: '300px' }}
+                  style={{ width: '400px' }}
                   disabled={bill.Status === 3}
                 />
               </div>
@@ -300,7 +329,7 @@ export default function ReturnsCenter() {
                 onClick={handleProcessReturn}
                 disabled={totalRefundAmount <= 0 || bill.Status === 3}
               >
-                PROCESS RETURN & REFUND
+                PROCESS RETURN
               </button>
             </div>
           </div>

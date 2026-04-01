@@ -6,7 +6,7 @@ export default function SalesHistory() {
   const [sales, setSales] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
-  // Filters: Default to the current month!
+  // Filters: Default to the current month
   const [searchQuery, setSearchQuery] = useState('')
   const [startDate, setStartDate] = useState(() => {
     const d = new Date()
@@ -23,7 +23,6 @@ export default function SalesHistory() {
     if (e) e.preventDefault()
     setLoading(true)
     try {
-      // 🚀 Passing our 3 arguments to the upgraded backend!
       // @ts-ignore
       const data = await window.api.getSalesHistory(startDate, endDate, searchQuery.trim())
       setSales(data || [])
@@ -34,7 +33,6 @@ export default function SalesHistory() {
     }
   }
 
-  // Load data automatically when the page opens
   useEffect(() => {
     loadSalesHistory()
   }, [])
@@ -50,7 +48,22 @@ export default function SalesHistory() {
     }
   }
 
-  // Calculate totals for the loaded period
+  // 🚀 Helper to render accurate Status Badges
+  const renderStatusBadge = (status: number) => {
+    switch (status) {
+      case 0:
+        return <span className={styles.statusPaid}>PAID</span>
+      case 1:
+        return <span className={styles.statusUnpaid}>UNPAID</span>
+      case 2:
+        return <span className={styles.statusPartial}>PARTIAL</span>
+      case 3:
+        return <span className={styles.statusVoid}>VOIDED</span>
+      default:
+        return <span className={styles.statusVoid}>UNKNOWN</span>
+    }
+  }
+
   const periodTotals = useMemo(() => {
     let validSales = 0
     let voidedSales = 0
@@ -60,6 +73,12 @@ export default function SalesHistory() {
     })
     return { validSales, voidedSales }
   }, [sales])
+
+  // 🚀 Calculate Total Savings for the Modal
+  const totalSavings = receiptItems.reduce((sum, item) => {
+    const original = item.OriginalPrice || item.UnitPrice
+    return sum + Math.max(0, original - item.UnitPrice) * item.Quantity
+  }, 0)
 
   return (
     <div className={styles.container}>
@@ -138,25 +157,24 @@ export default function SalesHistory() {
                 sales.map((s) => (
                   <tr key={s.ReceiptId} className={s.Status === 3 ? styles.voidedRow : ''}>
                     <td>{new Date(s.TransactionDate).toLocaleString()}</td>
-                    <td style={{ fontWeight: 700, fontFamily: 'monospace' }}>{s.ReceiptId}</td>
-                    <td>{s.CustomerName || 'Walk-in Customer'}</td>
+                    <td
+                      style={{ fontWeight: 800, fontFamily: 'monospace', color: 'var(--primary)' }}
+                    >
+                      {s.ReceiptId}
+                    </td>
+                    <td style={{ fontWeight: 600 }}>{s.CustomerName || 'Walk-in Customer'}</td>
                     <td>
                       <span className={s.IsCredit ? styles.creditBadge : styles.cashBadge}>
                         {s.IsCredit ? 'CREDIT' : 'CASH'}
                       </span>
                     </td>
-                    <td style={{ fontWeight: 800 }}>Rs {s.TotalAmount.toFixed(2)}</td>
-                    <td>
-                      {s.Status === 3 ? (
-                        <span className={styles.statusVoid}>VOIDED</span>
-                      ) : (
-                        <span className={styles.statusPaid}>PAID</span>
-                      )}
-                    </td>
+                    <td style={{ fontWeight: 900 }}>Rs {s.TotalAmount.toFixed(2)}</td>
+                    <td>{renderStatusBadge(s.Status)}</td>
                     <td style={{ textAlign: 'right' }}>
                       <button className={styles.viewBtn} onClick={() => handleViewItems(s)}>
                         VIEW DETAILS
                       </button>
+                      {/* NO VOID BUTTON HERE! Strictly for Returns Center now. */}
                     </td>
                   </tr>
                 ))
@@ -166,15 +184,25 @@ export default function SalesHistory() {
         </div>
       </div>
 
-      {/* --- RECEIPT DETAILS MODAL --- */}
+      {/* --- 🚀 BIG PANEL: RECEIPT DETAILS MODAL --- */}
       {viewingReceipt && (
         <div className={styles.modalOverlay}>
-          <div className={styles.modalBox}>
+          <div className={styles.modalBoxMassive}>
             <div className={styles.modalHeader}>
               <div>
-                <h2 style={{ margin: 0 }}>{viewingReceipt.ReceiptId}</h2>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  {new Date(viewingReceipt.TransactionDate).toLocaleString()}
+                <h2 style={{ margin: 0, color: 'var(--text-main)', fontSize: '24px' }}>
+                  Receipt: {viewingReceipt.ReceiptId}
+                </h2>
+                <div
+                  style={{
+                    fontSize: '13px',
+                    color: 'var(--text-muted)',
+                    fontWeight: 600,
+                    marginTop: '4px'
+                  }}
+                >
+                  {new Date(viewingReceipt.TransactionDate).toLocaleString()} | Customer:{' '}
+                  {viewingReceipt.CustomerName || 'Walk-in'}
                 </div>
               </div>
               <button className={styles.closeIcon} onClick={() => setViewingReceipt(null)}>
@@ -182,58 +210,139 @@ export default function SalesHistory() {
               </button>
             </div>
 
-            {viewingReceipt.Status === 3 && (
-              <div className={styles.dangerBanner}>
-                ⚠️ This receipt was VOIDED and is excluded from financial totals.
-              </div>
-            )}
-
             <div className={styles.modalBody}>
               <table className={styles.classicTable}>
                 <thead>
                   <tr>
-                    <th>ITEM</th>
+                    <th>BARCODE / SKU</th>
+                    <th>PRODUCT NAME</th>
                     <th>QTY</th>
-                    <th>PRICE</th>
-                    <th>TOTAL</th>
+                    <th>RETAIL PRICE</th>
+                    <th>DISCOUNT</th>
+                    <th>SOLD PRICE</th>
+                    <th style={{ textAlign: 'right' }}>LINE TOTAL</th>
                   </tr>
                 </thead>
                 <tbody>
                   {receiptItems.length === 0 ? (
                     <tr>
-                      <td colSpan={4} style={{ textAlign: 'center', padding: '20px' }}>
-                        Loading...
+                      <td
+                        colSpan={7}
+                        style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}
+                      >
+                        Loading items...
                       </td>
                     </tr>
                   ) : (
-                    receiptItems.map((item, idx) => (
-                      <tr key={idx}>
-                        <td>{item.ProductName}</td>
-                        <td>
-                          {item.Quantity} {item.Unit}
-                        </td>
-                        <td>Rs {item.UnitPrice.toFixed(2)}</td>
-                        <td style={{ fontWeight: 700 }}>
-                          Rs {(item.Quantity * item.UnitPrice).toFixed(2)}
-                        </td>
-                      </tr>
-                    ))
+                    receiptItems.map((item, idx) => {
+                      const original = item.OriginalPrice || item.UnitPrice
+                      const discountPerUnit = Math.max(0, original - item.UnitPrice)
+                      const hasDiscount = discountPerUnit > 0
+
+                      return (
+                        <tr key={idx}>
+                          <td
+                            style={{
+                              fontFamily: 'monospace',
+                              color: 'var(--text-muted)',
+                              fontSize: '12px'
+                            }}
+                          >
+                            {item.Barcode || '-'}
+                          </td>
+                          <td style={{ fontWeight: 800 }}>{item.ProductName}</td>
+                          <td style={{ fontWeight: 900 }}>
+                            {item.Quantity}{' '}
+                            <span
+                              style={{
+                                fontSize: '11px',
+                                color: 'var(--text-muted)',
+                                fontWeight: 'normal'
+                              }}
+                            >
+                              {item.Unit}
+                            </span>
+                          </td>
+                          <td
+                            style={{
+                              color: 'var(--text-muted)',
+                              textDecoration: hasDiscount ? 'line-through' : 'none'
+                            }}
+                          >
+                            Rs {original.toFixed(2)}
+                          </td>
+                          <td
+                            style={{
+                              color: hasDiscount ? '#d97706' : 'var(--text-muted)',
+                              fontWeight: hasDiscount ? 800 : 400
+                            }}
+                          >
+                            {hasDiscount ? `- Rs ${discountPerUnit.toFixed(2)}` : '-'}
+                          </td>
+                          <td style={{ color: 'var(--success)', fontWeight: 800 }}>
+                            Rs {item.UnitPrice.toFixed(2)}
+                          </td>
+                          <td
+                            style={{
+                              fontWeight: 900,
+                              textAlign: 'right',
+                              color: 'var(--text-main)'
+                            }}
+                          >
+                            Rs {(item.Quantity * item.UnitPrice).toFixed(2)}
+                          </td>
+                        </tr>
+                      )
+                    })
                   )}
                 </tbody>
               </table>
-              <div className={styles.modalSummary}>
-                <div className={styles.summaryLine}>
-                  Total Amount: <span>Rs {viewingReceipt.TotalAmount.toFixed(2)}</span>
+
+              <div className={styles.modalSummaryBox}>
+                <div className={styles.summaryLeft}>
+                  {totalSavings > 0 && (
+                    <div className={styles.savingsTag}>
+                      ⚡ Customer Saved: Rs {totalSavings.toFixed(2)}
+                    </div>
+                  )}
+                  <div style={{ marginTop: '10px', fontSize: '13px', color: 'var(--text-muted)' }}>
+                    <strong>Status:</strong>{' '}
+                    {viewingReceipt.Status === 3
+                      ? 'VOIDED'
+                      : viewingReceipt.IsCredit
+                        ? 'CREDIT ACCOUNT'
+                        : 'CASH SALE'}
+                  </div>
                 </div>
-                <div className={styles.summaryLine}>
-                  Paid Amount: <span>Rs {viewingReceipt.PaidAmount.toFixed(2)}</span>
+
+                <div className={styles.summaryRight}>
+                  <div className={styles.summaryLine}>
+                    <span>Total Amount:</span>
+                    <span>Rs {viewingReceipt.TotalAmount.toFixed(2)}</span>
+                  </div>
+                  <div className={`${styles.summaryLine} ${styles.paidLine}`}>
+                    <span>Paid Amount:</span>
+                    <span>Rs {viewingReceipt.PaidAmount.toFixed(2)}</span>
+                  </div>
+
+                  {/* Show Balance Due if it's a Credit Sale */}
+                  {viewingReceipt.IsCredit === 1 &&
+                    viewingReceipt.TotalAmount - viewingReceipt.PaidAmount > 0 && (
+                      <div className={`${styles.summaryLine} ${styles.balanceLine}`}>
+                        <span>Balance Due:</span>
+                        <span>
+                          Rs {(viewingReceipt.TotalAmount - viewingReceipt.PaidAmount).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
                 </div>
               </div>
             </div>
+
             <div className={styles.modalFooter}>
               <button className={styles.printBtn}>🖨️ REPRINT RECEIPT</button>
               <button className={styles.closeBtn} onClick={() => setViewingReceipt(null)}>
-                CLOSE
+                CLOSE PANEL
               </button>
             </div>
           </div>

@@ -5,21 +5,24 @@
 /* ========================================= */
 .container {
   display: flex;
-  gap: 10px;
+  gap: 4px;
   height: 100%;
   width: 100%;
   overflow: hidden;
-  padding: 10px;
+  padding: 4px;
 }
 .leftColumn {
-  flex: 2;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   overflow: hidden;
 }
+
 .rightColumn {
-  flex: 1;
+  width: 440px;
+  flex-shrink: 0;
+  flex-grow: 0;
   background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-lg);
@@ -30,7 +33,7 @@
 }
 
 /* ========================================= */
-/* TOP LEFT: PRODUCT GRID & CATEGORIES       */
+/* TOP LEFT: PRODUCT GRID                    */
 /* ========================================= */
 .gridPanel {
   flex: 1;
@@ -43,7 +46,7 @@
   overflow: hidden;
 }
 .gridHeader {
-  padding: 15px 20px;
+  padding: 12px 20px;
   background: var(--bg-sidebar);
   color: var(--sidebar-text);
   font-weight: 800;
@@ -56,43 +59,8 @@
   padding: 8px 12px;
   border-radius: var(--border-radius-sm);
   border: none;
-  width: 300px;
+  width: 350px;
   font-size: 13px;
-}
-
-.categoryScroll {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding: 12px 20px;
-  background: var(--bg-canvas);
-  border-bottom: 1px solid var(--border-color);
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.categoryScroll::-webkit-scrollbar {
-  display: none;
-}
-.categoryPill {
-  padding: 8px 18px;
-  border-radius: 20px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-  font-size: 13px;
-  font-weight: 700;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: all 0.2s;
-  user-select: none;
-}
-.categoryPill:hover {
-  border-color: var(--primary);
-}
-.categoryPill.active {
-  background: var(--primary);
-  color: white;
-  border-color: var(--primary);
 }
 
 .productsArea {
@@ -108,11 +76,11 @@
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-md);
-  padding: 12px;
+  padding: 8px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   transition: all 0.1s;
   user-select: none;
 }
@@ -124,7 +92,7 @@
 .productName {
   font-weight: 700;
   color: var(--text-main);
-  font-size: 13px;
+  font-size: 12px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -137,7 +105,7 @@
 .productPrice {
   color: var(--success);
   font-weight: 800;
-  font-size: 14px;
+  font-size: 11px;
 }
 .productStock {
   font-size: 11px;
@@ -157,8 +125,6 @@
 /* ========================================= */
 /* BOTTOM LEFT: PROFESSIONAL EDIT PANEL      */
 /* ========================================= */
-
-/* 🚀 KILL HTML NUMBER SPINNERS GLOBALLY */
 input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
@@ -172,7 +138,7 @@ input[type='number'] {
   background: var(--bg-surface);
   border: 2px solid var(--primary);
   border-radius: var(--border-radius-lg);
-  padding: 24px;
+  padding: 20px 24px;
   box-shadow: 0 8px 25px rgba(37, 99, 235, 0.15);
   display: flex;
   flex-direction: column;
@@ -196,45 +162,39 @@ input[type='number'] {
   color: var(--primary);
 }
 
-.removeBtn {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-  color: var(--danger);
-  font-weight: 800;
-  font-size: 14px;
-  padding: 10px 15px;
+.closeEditBtn {
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 5px;
+  transition: 0.2s;
+  line-height: 1;
 }
-.removeBtn:hover {
-  background: var(--danger);
-  color: white;
+.closeEditBtn:hover {
+  color: var(--danger);
+  transform: scale(1.1);
 }
 
-/* 🚀 NEW FLUID LAYOUT */
 .editControls {
   display: flex;
-  justify-content: flex-start; /* This moves everything tightly to the left! */
+  width: 100%;
   align-items: center;
-  gap: 30px;
+  gap: 20px;
 }
 .editLabel {
   font-size: 13px;
   color: var(--text-muted);
   font-weight: 800;
   text-transform: uppercase;
-  margin-bottom: 10px;
   display: block;
 }
 
-/* 1. MASSIVE PILL-SHAPED QUANTITY STEPPER */
 .qtyWrapper {
+  flex: 1;
   display: flex;
   flex-direction: column;
+  gap: 8px;
 }
 .qtyStepper {
   display: inline-flex;
@@ -242,17 +202,17 @@ input[type='number'] {
   border: 2px solid var(--border-color);
   border-radius: 50px;
   overflow: hidden;
-  height: 80px;
+  height: 70px;
   background: var(--bg-surface);
   width: fit-content;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 .qtyBtn {
-  width: 75px;
+  width: 65px;
   height: 100%;
   background: transparent;
   border: none;
-  font-size: 40px;
+  font-size: 34px;
   font-weight: 500;
   color: var(--text-main);
   cursor: pointer;
@@ -266,10 +226,10 @@ input[type='number'] {
   color: white;
 }
 .qtyInput {
-  width: 100px;
+  width: 90px;
   height: 100%;
   text-align: center;
-  font-size: 34px;
+  font-size: 30px;
   font-weight: 900;
   border: none;
   background: transparent;
@@ -282,13 +242,13 @@ input[type='number'] {
   background: rgba(37, 99, 235, 0.05);
 }
 
-/* 2. SLEEK INFO CENTER (Middle) */
 .editInfoBox {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 6px;
-  padding: 0 30px;
+  padding: 0 20px;
   border-left: 1px solid var(--border-color);
   border-right: 1px solid var(--border-color);
   height: 80px;
@@ -307,36 +267,62 @@ input[type='number'] {
   color: var(--warning);
   margin-left: 5px;
 }
-.infoCode {
-  font-size: 12px;
-  color: var(--text-muted);
-  font-weight: 700;
-  margin-top: 4px;
-  padding-top: 4px;
-  border-top: 1px dashed var(--border-color);
+.sleekDiscountBtn {
+  background: transparent;
+  border: none;
+  color: #d97706;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  padding: 4px 0 0 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s;
+  align-self: flex-start;
+}
+.sleekDiscountBtn:hover {
+  color: #f59e0b;
+  text-decoration: underline;
 }
 
-/* 3. MASSIVE PRICE INPUT & SLEEK ACTION */
 .priceWrapper {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-} /* flex-start forces the label and button to the LEFT! */
+  justify-content: flex-end;
+  height: 80px;
+}
+.dangerTextCompact {
+  color: var(--danger);
+  font-size: 11px;
+  font-weight: 900;
+  animation: pulse 1s infinite;
+  margin-bottom: 0;
+}
+
+.priceInputRow {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+}
 .priceInputBox {
   display: flex;
   align-items: center;
   border: 2px solid var(--border-color);
   border-radius: 16px;
-  height: 80px;
+  height: 70px;
   overflow: hidden;
   background: var(--bg-surface);
   transition: all 0.2s;
-  width: 260px;
+  width: 100%;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 .pricePrefix {
-  padding: 0 20px;
-  font-size: 24px;
+  padding: 0 15px;
+  font-size: 20px;
   font-weight: 800;
   color: var(--text-muted);
   background: var(--bg-canvas);
@@ -349,62 +335,31 @@ input[type='number'] {
   flex: 1;
   height: 100%;
   border: none;
-  padding: 0 20px;
-  font-size: 34px;
+  padding: 0 15px;
+  font-size: 28px;
   font-weight: 900;
   color: var(--success);
   text-align: left;
   background: transparent;
   width: 100%;
-} /* Text align LEFT! */
+}
 .priceInput:focus {
   outline: none;
   background: rgba(16, 185, 129, 0.05);
 }
 
-/* SLEEK DISCOUNT BUTTON */
-.sleekDiscountBtn {
-  background: transparent;
-  border: none;
-  color: var(--warning);
-  font-size: 14px;
-  font-weight: 900;
-  cursor: pointer;
-  margin-top: 10px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  transition: all 0.2s;
-  padding: 0;
-}
-.sleekDiscountBtn:hover {
-  color: #d97706;
-  text-decoration: underline;
-}
-
-/* DANGER STYLES */
 .priceInputBox.danger {
   border-color: var(--danger);
   background: #fef2f2;
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
 }
 .priceInputBox.danger .pricePrefix {
-  border-color: var(--danger);
   background: #fee2e2;
   color: var(--danger);
   border-color: var(--danger);
 }
 .priceInputBox.danger .priceInput {
   color: var(--danger);
-}
-.dangerText {
-  color: var(--danger);
-  font-size: 14px;
-  font-weight: 800;
-  margin-top: 10px;
-  display: block;
-  text-align: left;
-  animation: pulse 1s infinite;
 }
 
 @keyframes pulse {
@@ -449,14 +404,13 @@ input[type='number'] {
 
 .cartItemsArea {
   flex: 1;
-  padding: 15px;
+  padding: 4px;
   overflow-y: auto;
   background: #f8fafc;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
-
 .cartItem {
   background: #ffffff;
   border: 1px solid var(--border-color);
@@ -516,8 +470,6 @@ input[type='number'] {
   font-size: 15px;
   text-align: right;
 }
-
-/* 🚀 Clean, Minimalist Delete Button */
 .cartItemTrash {
   color: #cbd5e1;
   background: transparent;
@@ -537,11 +489,12 @@ input[type='number'] {
   color: #ef4444;
   background: #fef2f2;
 }
+
 /* ========================================= */
 /* RIGHT SIDE: PAYMENT SUMMARY FOOTER        */
 /* ========================================= */
 .checkoutFooter {
-  padding: 24px;
+  padding: 20px 24px;
   background: #ffffff;
   border-top: 1px solid var(--border-color);
   box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.03);
@@ -549,7 +502,7 @@ input[type='number'] {
 .summaryRow {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   font-size: 14px;
   color: var(--text-muted);
   font-weight: 700;
@@ -564,7 +517,7 @@ input[type='number'] {
   margin-top: 15px;
   padding-top: 15px;
   border-top: 2px dashed var(--border-color);
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 .totalLabel {
   font-size: 18px;
@@ -580,7 +533,7 @@ input[type='number'] {
 .checkoutBtnGrid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
 }
 .checkoutBtn {
   padding: 15px 10px;
@@ -588,7 +541,7 @@ input[type='number'] {
   border-radius: var(--border-radius-sm);
   color: white;
   font-weight: 800;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
   text-transform: uppercase;
   transition: filter 0.2s;
@@ -607,7 +560,7 @@ input[type='number'] {
 }
 
 /* ========================================= */
-/* BATCH MODAL                               */
+/* MODALS                                    */
 /* ========================================= */
 .modalOverlay {
   position: fixed;
@@ -667,4 +620,99 @@ input[type='number'] {
 }
 .cancelBtn:hover {
   filter: brightness(0.9);
+}
+
+/* 🚀 CHECKOUT MODAL STYLES (Restored Box for Credit) */
+.checkoutModalBox {
+  background: var(--bg-surface);
+  width: 500px;
+  border-radius: var(--border-radius-lg);
+  padding: 30px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.checkoutForm {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.checkoutTotalBanner {
+  background: var(--bg-canvas);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+.checkoutInputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.checkoutInputGroup label {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.standardInput {
+  padding: 12px 15px;
+  font-size: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  outline: none;
+  transition: 0.2s;
+}
+.standardInput:focus {
+  border-color: var(--primary);
+}
+
+.changeDueBox {
+  border: 1px solid var(--border-color);
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  transition: 0.3s;
+}
+
+.checkoutActionGrid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 15px;
+  margin-top: 10px;
+}
+.btnCancelSale {
+  padding: 15px;
+  background: var(--bg-canvas);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-weight: 800;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.btnCancelSale:hover {
+  background: #e2e8f0;
+}
+.btnConfirmSale {
+  padding: 15px;
+  background: var(--success);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 800;
+  font-size: 16px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.btnConfirmSale:hover {
+  filter: brightness(0.9);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+.btnConfirmSale:disabled {
+  background: var(--text-muted);
+  cursor: not-allowed;
 }

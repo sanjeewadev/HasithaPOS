@@ -3,85 +3,93 @@ import React, { useState, useEffect, useMemo } from 'react'
 import styles from './CreditAccounts.module.css'
 
 export default function CreditAccounts() {
-  const [accounts, setAccounts] = useState<any[]>([])
+  const [invoices, setInvoices] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Modal State
-  const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null)
-  const [customerBills, setCustomerBills] = useState<any[]>([])
+  // 🚀 NEW: Invoice-based Modal State
+  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null)
   const [paymentAmount, setPaymentAmount] = useState('')
+  const [isProcessing, setIsProcessing] = useState(false)
 
-  const loadAccounts = async () => {
+  const loadInvoices = async () => {
     setLoading(true)
     try {
       // @ts-ignore
       const data = await window.api.getPendingCreditAccounts()
-      setAccounts(data || [])
+      setInvoices(data || [])
     } catch (err) {
-      console.error('Failed to load credit accounts', err)
+      console.error('Failed to load credit invoices', err)
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    loadAccounts()
+    loadInvoices()
   }, [])
 
-  const handleOpenSettle = async (customerName: string) => {
-    setSelectedCustomer(customerName)
-    setPaymentAmount('')
-    try {
-      // @ts-ignore
-      const bills = await window.api.getCustomerCreditBills(customerName)
-      setCustomerBills(bills || [])
-    } catch (err) {
-      setCustomerBills([])
-    }
+  const handleOpenSettle = (invoice: any) => {
+    setSelectedInvoice(invoice)
+    // Automatically default to the full pending amount to save time!
+    setPaymentAmount(invoice.TotalPending.toFixed(2))
   }
 
   const handleProcessPayment = async (e: React.FormEvent) => {
     e.preventDefault()
     const amount = parseFloat(paymentAmount)
+
     if (isNaN(amount) || amount <= 0) return alert('Enter a valid payment amount.')
+    if (amount > selectedInvoice.TotalPending) {
+      return alert(
+        `Payment cannot exceed the total pending debt of Rs ${selectedInvoice.TotalPending.toFixed(2)}`
+      )
+    }
 
-    const totalOwed = customerBills.reduce((sum, b) => sum + (b.TotalAmount - b.PaidAmount), 0)
-    if (amount > totalOwed)
-      return alert(`Payment cannot exceed total pending debt of Rs ${totalOwed.toFixed(2)}`)
-
-    if (window.confirm(`Process payment of Rs ${amount.toFixed(2)} for ${selectedCustomer}?`)) {
+    if (
+      window.confirm(
+        `Process payment of Rs ${amount.toFixed(2)} for Invoice ${selectedInvoice.ReceiptId}?`
+      )
+    ) {
+      setIsProcessing(true)
       try {
-        // @ts-ignore
-        await window.api.processCreditPayment(selectedCustomer, amount)
-        alert('Payment successfully applied!')
-        setSelectedCustomer(null)
-        loadAccounts() // Refresh main table
+        // @ts-ignore (Reusing the same bridge, but passing ReceiptId instead of CustomerName!)
+        await window.api.processCreditPayment(selectedInvoice.ReceiptId, amount)
+        alert('✅ Payment successfully applied to invoice!')
+        setSelectedInvoice(null)
+        loadInvoices()
       } catch (err: any) {
         alert('Error processing payment: ' + err.message)
+      } finally {
+        setIsProcessing(false)
       }
     }
   }
 
-  const displayedAccounts = useMemo(() => {
-    if (!searchQuery) return accounts
-    return accounts.filter((a) => a.CustomerName.toLowerCase().includes(searchQuery.toLowerCase()))
-  }, [accounts, searchQuery])
+  const displayedInvoices = useMemo(() => {
+    if (!searchQuery) return invoices
+    const q = searchQuery.toLowerCase()
+    return invoices.filter(
+      (i) =>
+        (i.CustomerName && i.CustomerName.toLowerCase().includes(q)) ||
+        i.ReceiptId.toLowerCase().includes(q)
+    )
+  }, [invoices, searchQuery])
 
   const totalSystemDebt = useMemo(() => {
-    return accounts.reduce((sum, acc) => sum + acc.TotalPending, 0)
-  }, [accounts])
+    return invoices.reduce((sum, acc) => sum + acc.TotalPending, 0)
+  }, [invoices])
 
   return (
     <div className={styles.container}>
       {/* --- TOP PANEL --- */}
       <div className={styles.topPanel}>
         <div className={styles.headerInfo}>
-          <h2 className={styles.panelTitle}>DEBTORS LEDGER</h2>
+          <h2 className={styles.panelTitle}>DEBTORS LEDGER (BY INVOICE)</h2>
           <input
             type="text"
             className={styles.searchInput}
-            placeholder="Search Customer Name..."
+            placeholder="Search Customer or Invoice ID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -98,37 +106,42 @@ export default function CreditAccounts() {
           <table className={styles.classicTable}>
             <thead>
               <tr>
+                <th>DATE</th>
+                <th>RECEIPT ID</th>
                 <th>CUSTOMER NAME</th>
-                <th>UNPAID BILLS</th>
-                <th>TOTAL CREDIT</th>
+                <th>TOTAL VALUE</th>
                 <th>PAID SO FAR</th>
-                <th>PENDING AMOUNT</th>
+                <th>CURRENT DEBT</th>
                 <th style={{ textAlign: 'right' }}>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
-              {displayedAccounts.length === 0 ? (
+              {displayedInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className={styles.emptyMsg}>
-                    No outstanding credit accounts.
+                  <td colSpan={7} className={styles.emptyMsg}>
+                    No outstanding credit invoices found.
                   </td>
                 </tr>
               ) : (
-                displayedAccounts.map((acc, idx) => (
+                displayedInvoices.map((inv, idx) => (
                   <tr key={idx}>
-                    <td style={{ fontWeight: 800 }}>{acc.CustomerName || 'Unknown'}</td>
-                    <td style={{ fontWeight: 700 }}>{acc.TotalUnpaidBills} Invoices</td>
-                    <td style={{ color: 'var(--text-muted)' }}>Rs {acc.TotalCredit.toFixed(2)}</td>
-                    <td style={{ color: 'var(--success)' }}>Rs {acc.TotalPaid.toFixed(2)}</td>
-                    <td style={{ fontWeight: 900, color: 'var(--danger)', fontSize: '15px' }}>
-                      Rs {acc.TotalPending.toFixed(2)}
+                    <td>{new Date(inv.TransactionDate).toLocaleDateString()}</td>
+                    <td
+                      style={{ fontWeight: 800, fontFamily: 'monospace', color: 'var(--primary)' }}
+                    >
+                      {inv.ReceiptId}
+                    </td>
+                    <td style={{ fontWeight: 800, fontSize: '14px' }}>
+                      {inv.CustomerName || 'Unknown'}
+                    </td>
+                    <td style={{ color: 'var(--text-muted)' }}>Rs {inv.TotalCredit.toFixed(2)}</td>
+                    <td style={{ color: 'var(--success)' }}>Rs {inv.TotalPaid.toFixed(2)}</td>
+                    <td style={{ fontWeight: 900, color: 'var(--danger)', fontSize: '16px' }}>
+                      Rs {inv.TotalPending.toFixed(2)}
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <button
-                        className={styles.settleBtn}
-                        onClick={() => handleOpenSettle(acc.CustomerName)}
-                      >
-                        SETTLE DEBT
+                      <button className={styles.settleBtn} onClick={() => handleOpenSettle(inv)}>
+                        PAY INVOICE
                       </button>
                     </td>
                   </tr>
@@ -139,13 +152,13 @@ export default function CreditAccounts() {
         </div>
       </div>
 
-      {/* --- SETTLE PAYMENT MODAL --- */}
-      {selectedCustomer && (
+      {/* --- SETTLE SINGLE INVOICE MODAL --- */}
+      {selectedInvoice && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalBox}>
             <div className={styles.modalHeader}>
               <div>
-                <h2 style={{ margin: 0 }}>Account: {selectedCustomer}</h2>
+                <h2 style={{ margin: 0, fontSize: '22px' }}>Pay Invoice</h2>
                 <div
                   style={{
                     fontSize: '13px',
@@ -154,55 +167,29 @@ export default function CreditAccounts() {
                     marginTop: '4px'
                   }}
                 >
-                  Unpaid Invoices: {customerBills.length}
+                  Customer:{' '}
+                  <span style={{ color: 'var(--primary)' }}>{selectedInvoice.CustomerName}</span> |
+                  ID: {selectedInvoice.ReceiptId}
                 </div>
               </div>
-              <button className={styles.closeIcon} onClick={() => setSelectedCustomer(null)}>
+              <button className={styles.closeIcon} onClick={() => setSelectedInvoice(null)}>
                 ✖
               </button>
             </div>
 
             <div className={styles.modalBody}>
-              <div
-                className={styles.tableWrapper}
-                style={{
-                  maxHeight: '200px',
-                  marginBottom: '20px',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '6px'
-                }}
-              >
-                <table className={styles.classicTable}>
-                  <thead>
-                    <tr>
-                      <th>RECEIPT ID</th>
-                      <th>DATE</th>
-                      <th>BILL TOTAL</th>
-                      <th>PENDING</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {customerBills.map((bill) => (
-                      <tr key={bill.ReceiptId}>
-                        <td style={{ fontWeight: 700, fontFamily: 'monospace' }}>
-                          {bill.ReceiptId}
-                        </td>
-                        <td>{new Date(bill.TransactionDate).toLocaleDateString()}</td>
-                        <td style={{ color: 'var(--text-muted)' }}>
-                          Rs {bill.TotalAmount.toFixed(2)}
-                        </td>
-                        <td style={{ fontWeight: 800, color: 'var(--danger)' }}>
-                          Rs {(bill.TotalAmount - bill.PaidAmount).toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className={styles.debtBanner}>
+                <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--danger)' }}>
+                  REMAINING DEBT OWED
+                </div>
+                <div style={{ fontSize: '32px', fontWeight: 900, color: 'var(--danger)' }}>
+                  Rs {selectedInvoice.TotalPending.toFixed(2)}
+                </div>
               </div>
 
               <form onSubmit={handleProcessPayment} className={styles.paymentForm}>
                 <div className={styles.formGroup}>
-                  <label>Payment Amount Received (Rs)</label>
+                  <label>Cash Received (Rs)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -213,20 +200,39 @@ export default function CreditAccounts() {
                     required
                     autoFocus
                   />
-                  <p className={styles.helperText}>
-                    This payment will be automatically applied to the oldest unpaid invoices first.
-                  </p>
+
+                  {/* 🚀 NEW: QUICK PAY BUTTONS */}
+                  <div className={styles.quickPayGrid}>
+                    <button
+                      type="button"
+                      className={styles.quickPayBtn}
+                      onClick={() =>
+                        setPaymentAmount((selectedInvoice.TotalPending / 2).toFixed(2))
+                      }
+                    >
+                      50% HALF PAY
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.quickPayBtn} ${styles.fullPay}`}
+                      onClick={() => setPaymentAmount(selectedInvoice.TotalPending.toFixed(2))}
+                    >
+                      100% FULL PAY
+                    </button>
+                  </div>
                 </div>
+
                 <div className={styles.modalFooter}>
                   <button
                     type="button"
                     className={styles.cancelBtn}
-                    onClick={() => setSelectedCustomer(null)}
+                    onClick={() => setSelectedInvoice(null)}
+                    disabled={isProcessing}
                   >
                     CANCEL
                   </button>
-                  <button type="submit" className={styles.submitBtn}>
-                    PROCESS PAYMENT
+                  <button type="submit" className={styles.submitBtn} disabled={isProcessing}>
+                    {isProcessing ? 'PROCESSING...' : 'APPLY TO INVOICE'}
                   </button>
                 </div>
               </form>

@@ -1,7 +1,7 @@
 /* src/renderer/src/views/Inventory/SupplierManager.module.css */
 .container {
   display: flex;
-  gap: 20px;
+  gap: 8px;
   height: 100%;
 }
 

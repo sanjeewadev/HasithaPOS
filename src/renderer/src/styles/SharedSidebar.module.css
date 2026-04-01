@@ -82,7 +82,7 @@
 /* The Content Area */
 .contentArea {
   flex: 1;
-  padding: 16px;
+  padding: 8px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;

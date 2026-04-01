@@ -7,17 +7,15 @@ export default function SupplierManager() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [searchQuery, setSearchQuery] = useState('')
 
-  // 🚀 SMART FORM STATE (Handles both Add and Edit)
+  // 🚀 SMART FORM STATE
   const [editingSupplierId, setEditingSupplierId] = useState<number | null>(null)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
 
   // --- MODAL STATES ---
-  // 🚀 Unified Profile Modal
   const [supplierProfile, setSupplierProfile] = useState<Supplier | null>(null)
   const [supplierBills, setSupplierBills] = useState<any[]>([])
 
-  // Drill-down Bill Details Modal
   const [viewingBillDetails, setViewingBillDetails] = useState<any | null>(null)
   const [billItems, setBillItems] = useState<any[]>([])
 
@@ -34,7 +32,6 @@ export default function SupplierManager() {
     loadData()
   }, [])
 
-  // --- SMART FORM ACTIONS ---
   const handleClear = () => {
     setEditingSupplierId(null)
     setName('')
@@ -53,12 +50,10 @@ export default function SupplierManager() {
 
     try {
       if (editingSupplierId) {
-        // 🚀 NEW: Update Logic
         // @ts-ignore
         await window.api.updateSupplier({ Id: editingSupplierId, Name: name, Phone: phone })
         alert('Supplier updated successfully!')
       } else {
-        // Existing: Add Logic
         // @ts-ignore
         await window.api.addSupplier({ Name: name, Phone: phone })
       }
@@ -81,7 +76,6 @@ export default function SupplierManager() {
     }
   }
 
-  // --- UNIFIED PROFILE MODAL ACTIONS ---
   const handleOpenProfile = async (sup: Supplier) => {
     setSupplierProfile(sup)
     try {
@@ -106,7 +100,6 @@ export default function SupplierManager() {
     }
   }
 
-  // --- FILTERING ---
   const displayedSuppliers = useMemo(() => {
     const q = searchQuery.toLowerCase()
     return suppliers.filter(
@@ -116,7 +109,7 @@ export default function SupplierManager() {
 
   return (
     <div className={styles.container}>
-      {/* --- LEFT PANEL: TABLE --- */}
+      {/* --- LEFT PANEL: MAIN SUPPLIER TABLE --- */}
       <div className={styles.leftPanel}>
         <div className={styles.headerRow}>
           <h2 className={styles.panelTitle}>SUPPLIER DATABASE</h2>
@@ -133,6 +126,7 @@ export default function SupplierManager() {
           <table className={styles.classicTable}>
             <thead>
               <tr>
+                {/* 🚀 FIXED: Brought back the correct Main Table Headers */}
                 <th>COMPANY NAME</th>
                 <th>PHONE NUMBER</th>
                 <th style={{ textAlign: 'right' }}>ACTIONS</th>
@@ -162,7 +156,6 @@ export default function SupplierManager() {
                       >
                         INFO
                       </button>
-                      {/* 🚀 NEW EDIT BUTTON */}
                       <button
                         className={`${styles.actionBtn} ${styles.btnEdit}`}
                         onClick={() => handleEditClick(sup)}
@@ -341,11 +334,11 @@ export default function SupplierManager() {
       )}
 
       {/* ========================================= */}
-      {/* MODAL 2: WIDER SPECIFIC BILL DETAILS      */}
+      {/* MODAL 2: MASSIVE SPECIFIC BILL DETAILS    */}
       {/* ========================================= */}
       {viewingBillDetails && (
         <div className={styles.modalOverlay}>
-          <div className={`${styles.modalBox} ${styles.modalBoxLarge}`}>
+          <div className={`${styles.modalBox} ${styles.modalBoxMassive}`}>
             <div className={styles.modalHeader}>
               <div>
                 <h2 style={{ margin: 0, fontSize: '20px', color: 'var(--text-main)' }}>
@@ -354,12 +347,12 @@ export default function SupplierManager() {
                 <p
                   style={{
                     margin: '4px 0 0 0',
-                    fontSize: '12px',
+                    fontSize: '13px',
                     color: 'var(--text-muted)',
                     fontWeight: 600
                   }}
                 >
-                  Date: {new Date(viewingBillDetails.Date).toLocaleString()}
+                  Received Date: {new Date(viewingBillDetails.Date).toLocaleString()}
                 </p>
               </div>
               <div
@@ -374,15 +367,15 @@ export default function SupplierManager() {
                 <p
                   style={{
                     margin: 0,
-                    fontSize: '11px',
+                    fontSize: '12px',
                     color: '#16a34a',
                     fontWeight: 800,
                     textTransform: 'uppercase'
                   }}
                 >
-                  Invoice Total
+                  Total Invoice Cost
                 </p>
-                <h2 style={{ margin: 0, fontSize: '22px', color: '#15803d', fontWeight: 900 }}>
+                <h2 style={{ margin: 0, fontSize: '24px', color: '#15803d', fontWeight: 900 }}>
                   Rs {viewingBillDetails.TotalAmount.toFixed(2)}
                 </h2>
               </div>
@@ -396,38 +389,89 @@ export default function SupplierManager() {
                   fontWeight: 800
                 }}
               >
-                Items Received
+                Detailed Item Breakdown
               </h3>
               <div className={styles.tableWrapper}>
                 <table className={styles.classicTable}>
                   <thead>
                     <tr>
+                      <th>SKU / BARCODE</th>
                       <th>PRODUCT NAME</th>
-                      <th>QTY</th>
+                      <th>RECEIVED QTY</th>
                       <th>UNIT COST</th>
-                      <th>LINE TOTAL</th>
+                      <th>SET SELLING PRICE</th>
+                      <th>MAX DISCOUNT %</th>
+                      <th style={{ textAlign: 'right' }}>LINE COST TOTAL</th>
                     </tr>
                   </thead>
                   <tbody>
                     {billItems.length === 0 ? (
                       <tr>
-                        <td colSpan={4} style={{ textAlign: 'center', padding: '30px' }}>
-                          Loading items...
+                        <td
+                          colSpan={7}
+                          style={{
+                            textAlign: 'center',
+                            padding: '40px',
+                            color: 'var(--text-muted)'
+                          }}
+                        >
+                          No items found for this invoice.
                         </td>
                       </tr>
                     ) : (
-                      billItems.map((item, idx) => (
-                        <tr key={idx}>
-                          <td style={{ fontWeight: 700 }}>{item.ProductName}</td>
-                          <td style={{ fontWeight: 800 }}>{item.InitialQuantity}</td>
-                          <td style={{ color: 'var(--text-muted)' }}>
-                            Rs {item.CostPrice.toFixed(2)}
-                          </td>
-                          <td style={{ fontWeight: 800, color: 'var(--success)' }}>
-                            Rs {(item.InitialQuantity * item.CostPrice).toFixed(2)}
-                          </td>
-                        </tr>
-                      ))
+                      billItems.map((item, idx) => {
+                        const maxDiscount =
+                          item.SellingPrice > 0
+                            ? ((item.SellingPrice - item.CostPrice) / item.SellingPrice) * 100
+                            : 0
+                        return (
+                          <tr key={idx}>
+                            <td
+                              style={{
+                                fontSize: '12px',
+                                color: 'var(--text-muted)',
+                                fontFamily: 'monospace'
+                              }}
+                            >
+                              {item.Barcode || 'N/A'}
+                            </td>
+                            <td style={{ fontWeight: 800, color: 'var(--text-main)' }}>
+                              {item.ProductName}
+                            </td>
+                            <td style={{ fontWeight: 900 }}>
+                              {item.InitialQuantity}{' '}
+                              <span
+                                style={{
+                                  fontSize: '12px',
+                                  color: 'var(--text-muted)',
+                                  fontWeight: 'normal'
+                                }}
+                              >
+                                {item.Unit}
+                              </span>
+                            </td>
+                            <td style={{ color: 'var(--text-muted)', fontWeight: 600 }}>
+                              Rs {item.CostPrice.toFixed(2)}
+                            </td>
+                            <td style={{ color: 'var(--success)', fontWeight: 800 }}>
+                              Rs {item.SellingPrice.toFixed(2)}
+                            </td>
+                            <td style={{ fontWeight: 900, color: '#d97706' }}>
+                              {maxDiscount.toFixed(2)}%
+                            </td>
+                            <td
+                              style={{
+                                fontWeight: 900,
+                                color: 'var(--text-main)',
+                                textAlign: 'right',
+                                fontSize: '15px'
+                              }}
+                            >
+                              Rs {(item.InitialQuantity * item.CostPrice).toFixed(2)}
+                            </td>
+                          </tr>
+                        )
+                      })
                     )}
                   </tbody>
                 </table>
