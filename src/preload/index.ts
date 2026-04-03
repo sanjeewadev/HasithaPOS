@@ -55,6 +55,9 @@ const api = {
   // --- REPORTS & DASHBOARD ---
   getDashboardMetrics: () => ipcRenderer.invoke('get-dashboard-metrics'),
   getChartData: (filter: string) => ipcRenderer.invoke('get-chart-data', filter),
+  // Add this inside your window.api object in preload.ts:
+  getDashboardData: (startDate: string, endDate: string) =>
+    ipcRenderer.invoke('get-dashboard-data', startDate, endDate),
   getTopSellers: () => ipcRenderer.invoke('get-top-sellers'),
   getLowStockAlerts: () => ipcRenderer.invoke('get-dashboard-low-stock'),
   getAuditLogs: (startDate: string, endDate: string) =>
@@ -72,7 +75,13 @@ const api = {
     ipcRenderer.invoke('process-credit-payment', receiptId, amount),
   // Find your stockRepo area and add:
   processCompleteSale: (transaction: any, movements: any[]) =>
-    ipcRenderer.invoke('process-complete-sale', transaction, movements)
+    ipcRenderer.invoke('process-complete-sale', transaction, movements),
+
+  // --- SYSTEM & HARDWARE ---
+  getPrinters: () => ipcRenderer.invoke('get-printers'),
+  exportDatabase: () => ipcRenderer.invoke('export-database'),
+  importDatabase: () => ipcRenderer.invoke('import-database'),
+  factoryReset: () => ipcRenderer.invoke('factory-reset')
 }
 
 // ==========================================

@@ -1,0 +1,177 @@
+/* src/renderer/src/views/Login/LoginView.module.css */
+
+.container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-canvas);
+  /* A subtle dot pattern to make the background look like a professional workspace */
+  background-image: radial-gradient(var(--border-color) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.loginCard {
+  width: 420px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 40px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.icon {
+  font-size: 28px;
+  font-weight: 900;
+  color: white;
+  background-color: var(--primary);
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  margin: 0 auto 15px auto;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--sidebar-bg);
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-weight: 800;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.input {
+  width: 100%;
+  height: 48px;
+  padding: 0 16px;
+  border-radius: 8px;
+  border: 2px solid var(--border-color);
+  font-size: 15px;
+  font-family: inherit;
+  background-color: var(--bg-surface);
+  color: var(--text-main);
+  font-weight: 600;
+  outline: none;
+  transition: 0.2s;
+}
+
+.input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  background-color: #ffffff;
+}
+
+.input:disabled {
+  background-color: var(--bg-canvas);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.errorContainer {
+  min-height: 20px;
+  text-align: center;
+}
+
+.errorText {
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.infoText {
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.submitBtn {
+  width: 100%;
+  height: 50px;
+  background-color: var(--primary); /* Matches the dark left navigation panel */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  margin-top: 5px;
+  transition: 0.2s;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+}
+
+.submitBtn:disabled {
+  background-color: var(--text-muted);
+  cursor: wait;
+}
+
+.exitContainer {
+  text-align: center;
+  margin-top: 25px;
+}
+
+.exitBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 13px;
+  transition: 0.2s;
+}
+
+.exitBtn:hover {
+  color: var(--danger);
+  text-decoration: underline;
+}

@@ -37,24 +37,29 @@ export default function CreditAccounts() {
 
   const handleProcessPayment = async (e: React.FormEvent) => {
     e.preventDefault()
-    const amount = parseFloat(paymentAmount)
 
-    if (isNaN(amount) || amount <= 0) return alert('Enter a valid payment amount.')
-    if (amount > selectedInvoice.TotalPending) {
+    // 🚀 SECURITY FIX: Safe Floating Point Math
+    const amount = parseFloat(paymentAmount)
+    if (isNaN(amount) || amount <= 0) return alert('Enter a valid payment amount greater than 0.')
+
+    const safeAmount = parseFloat(amount.toFixed(2))
+    const safePending = parseFloat(selectedInvoice.TotalPending.toFixed(2))
+
+    if (safeAmount > safePending) {
       return alert(
-        `Payment cannot exceed the total pending debt of Rs ${selectedInvoice.TotalPending.toFixed(2)}`
+        `Payment (Rs ${safeAmount.toFixed(2)}) cannot exceed the total pending debt of Rs ${safePending.toFixed(2)}`
       )
     }
 
     if (
       window.confirm(
-        `Process payment of Rs ${amount.toFixed(2)} for Invoice ${selectedInvoice.ReceiptId}?`
+        `Process payment of Rs ${safeAmount.toFixed(2)} for Invoice ${selectedInvoice.ReceiptId}?`
       )
     ) {
       setIsProcessing(true)
       try {
-        // @ts-ignore (Reusing the same bridge, but passing ReceiptId instead of CustomerName!)
-        await window.api.processCreditPayment(selectedInvoice.ReceiptId, amount)
+        // @ts-ignore
+        await window.api.processCreditPayment(selectedInvoice.ReceiptId, safeAmount)
         alert('✅ Payment successfully applied to invoice!')
         setSelectedInvoice(null)
         loadInvoices()
@@ -119,7 +124,9 @@ export default function CreditAccounts() {
               {displayedInvoices.length === 0 ? (
                 <tr>
                   <td colSpan={7} className={styles.emptyMsg}>
-                    No outstanding credit invoices found.
+                    {searchQuery
+                      ? 'No matching invoices found.'
+                      : 'No outstanding credit invoices found.'}
                   </td>
                 </tr>
               ) : (
@@ -190,18 +197,24 @@ export default function CreditAccounts() {
               <form onSubmit={handleProcessPayment} className={styles.paymentForm}>
                 <div className={styles.formGroup}>
                   <label>Cash Received (Rs)</label>
+                  {/* 🚀 UX FIX: Secure text input for currency */}
                   <input
-                    type="number"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
+                    autoComplete="off"
                     className={styles.moneyInput}
                     value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
+                    onChange={(e) => {
+                      if (e.target.value === '' || /^\d*\.?\d*$/.test(e.target.value)) {
+                        setPaymentAmount(e.target.value)
+                      }
+                    }}
                     placeholder="0.00"
                     required
                     autoFocus
                   />
 
-                  {/* 🚀 NEW: QUICK PAY BUTTONS */}
+                  {/* QUICK PAY BUTTONS */}
                   <div className={styles.quickPayGrid}>
                     <button
                       type="button"

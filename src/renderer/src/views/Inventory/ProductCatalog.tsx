@@ -14,7 +14,7 @@ export default function ProductCatalog() {
 
   // Modal State
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null)
-  const [productBatches, setProductBatches] = useState<any[]>([]) // 🚀 NEW STATE FOR BATCHES
+  const [productBatches, setProductBatches] = useState<any[]>([])
 
   const loadData = async () => {
     try {
@@ -33,26 +33,22 @@ export default function ProductCatalog() {
     loadData()
   }, [])
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      try {
-        // @ts-ignore
-        await window.api.deleteProduct(id)
-        loadData()
-      } catch (err) {
-        alert('Error deleting product.')
-      }
-    }
-  }
-
   // --- ACTIONS: VIEW BATCHES ---
   const handleViewProduct = async (product: Product) => {
     setViewingProduct(product)
     try {
-      // 🚀 FETCH THE BATCHES FROM OUR NEW BRIDGE
       // @ts-ignore
       const batches = await window.api.getProductBatches(product.Id)
-      setProductBatches(batches || [])
+
+      // 🚀 FIX: Filter out empty batches and sort by NEWEST first!
+      const activeBatches = (batches || [])
+        .filter((b: any) => b.RemainingQuantity > 0)
+        .sort(
+          (a: any, b: any) =>
+            new Date(b.ReceivedDate).getTime() - new Date(a.ReceivedDate).getTime()
+        )
+
+      setProductBatches(activeBatches)
     } catch (err) {
       console.error(err)
       setProductBatches([])
@@ -74,7 +70,10 @@ export default function ProductCatalog() {
             <div
               className={`${styles.treeNode} ${isActive ? styles.active : ''}`}
               style={{ paddingLeft: `${depth * 15 + 10}px` }}
-              onClick={() => setSelectedCatId(cat.Id)}
+              onClick={() => {
+                setSelectedCatId(cat.Id)
+                setSearchQuery('') // 🚀 Clear search when clicking a folder
+              }}
             >
               <span
                 className={styles.expandIcon}
@@ -101,14 +100,20 @@ export default function ProductCatalog() {
     return renderTree(null)
   }, [categories, expandedFolders, selectedCatId])
 
+  // 🚀 FIXED: Global Search overrides folder selection
   const displayedProducts = useMemo(() => {
-    return products.filter((p) => {
-      const matchesCategory = selectedCatId === null ? true : p.CategoryId === selectedCatId
+    if (searchQuery) {
       const q = searchQuery.toLowerCase()
-      const matchesSearch =
-        p.Name.toLowerCase().includes(q) || (p.Barcode && p.Barcode.toLowerCase().includes(q))
-      return matchesCategory && matchesSearch
-    })
+      return products.filter(
+        (p) =>
+          p.Name.toLowerCase().includes(q) || (p.Barcode && p.Barcode.toLowerCase().includes(q))
+      )
+    }
+
+    // If no search query, filter by selected folder (if any)
+    return selectedCatId === null
+      ? products
+      : products.filter((p) => p.CategoryId === selectedCatId)
   }, [products, selectedCatId, searchQuery])
 
   const getCatName = (id: number | null) => {
@@ -122,8 +127,11 @@ export default function ProductCatalog() {
         <div className={styles.panelHeader}>Filter By Folder</div>
         <div className={styles.treeContainer}>
           <div
-            className={`${styles.treeNode} ${selectedCatId === null ? styles.active : ''}`}
-            onClick={() => setSelectedCatId(null)}
+            className={`${styles.treeNode} ${selectedCatId === null && !searchQuery ? styles.active : ''}`}
+            onClick={() => {
+              setSelectedCatId(null)
+              setSearchQuery('')
+            }}
           >
             <span className={styles.expandIcon}>•</span>
             <span className={styles.folderIcon}>📦</span>
@@ -136,13 +144,16 @@ export default function ProductCatalog() {
       {/* LAYER 2: DATA TABLE */}
       <div className={styles.panel}>
         <div className={styles.headerRow}>
-          <h2 className={styles.panelHeaderTitle}>PRODUCT CATALOG</h2>
+          <h2 className={styles.panelHeaderTitle}>PRODUCT VIEWER</h2>
           <input
             type="text"
             className={styles.classicInput}
-            placeholder="Search by Name or Barcode..."
+            placeholder="Global Search (Name or Code)..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value)
+              if (e.target.value) setSelectedCatId(null) // 🚀 Deselect folder if searching globally
+            }}
           />
         </div>
 
@@ -156,7 +167,7 @@ export default function ProductCatalog() {
                 <th>BUY PRICE</th>
                 <th>SELL PRICE</th>
                 <th>STOCK</th>
-                <th>ACTIONS</th>
+                <th style={{ textAlign: 'right' }}>DETAILS</th>
               </tr>
             </thead>
             <tbody>
@@ -164,43 +175,52 @@ export default function ProductCatalog() {
                 <tr>
                   <td
                     colSpan={7}
-                    style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}
+                    style={{ textAlign: 'center', padding: '50px', color: 'var(--text-muted)' }}
                   >
-                    No products found.
+                    {searchQuery
+                      ? 'No products match your search.'
+                      : 'No products found in this folder.'}
                   </td>
                 </tr>
               ) : (
                 displayedProducts.map((product) => (
                   <tr key={product.Id}>
-                    <td style={{ fontFamily: 'monospace', color: 'var(--text-muted)' }}>
+                    <td
+                      style={{
+                        fontFamily: 'monospace',
+                        color: 'var(--text-muted)',
+                        fontSize: '13px'
+                      }}
+                    >
                       {product.Barcode}
                     </td>
-                    <td style={{ fontWeight: 600 }}>{product.Name}</td>
-                    <td>{getCatName(product.CategoryId)}</td>
+                    <td style={{ fontWeight: 800 }}>{product.Name}</td>
+                    <td style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                      {getCatName(product.CategoryId)}
+                    </td>
                     <td style={{ color: 'var(--text-muted)' }}>
                       Rs {(product.BuyingPrice || 0).toFixed(2)}
                     </td>
-                    <td style={{ color: 'var(--success)', fontWeight: 600 }}>
+                    <td style={{ color: 'var(--success)', fontWeight: 800 }}>
                       Rs {(product.SellingPrice || 0).toFixed(2)}
                     </td>
-                    <td style={{ fontWeight: 700 }}>
-                      {product.Quantity || 0} {product.Unit}
+                    <td style={{ fontWeight: 900, color: 'var(--primary)' }}>
+                      {product.Quantity || 0}{' '}
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          color: 'var(--text-muted)',
+                          fontWeight: 'normal'
+                        }}
+                      >
+                        {product.Unit}
+                      </span>
                     </td>
-                    <td>
-                      <div className={styles.actionGroup}>
-                        <button
-                          className={styles.viewBtn}
-                          onClick={() => handleViewProduct(product)}
-                        >
-                          VIEW
-                        </button>
-                        <button
-                          className={styles.deleteBtn}
-                          onClick={() => handleDelete(product.Id)}
-                        >
-                          DELETE
-                        </button>
-                      </div>
+                    <td style={{ textAlign: 'right' }}>
+                      {/* 🚀 FIXED: Only the View button remains. No Delete button! */}
+                      <button className={styles.viewBtn} onClick={() => handleViewProduct(product)}>
+                        VIEW BATCHES
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -213,7 +233,7 @@ export default function ProductCatalog() {
       {/* --- MODAL: BATCH DETAILS --- */}
       {viewingProduct !== null && (
         <div className={styles.modalOverlay}>
-          <div className={styles.modalBox}>
+          <div className={styles.modalBoxView}>
             {/* Modal Header */}
             <div className={styles.modalHeader}>
               <div>
@@ -307,17 +327,25 @@ export default function ProductCatalog() {
                       productBatches.map((batch, idx) => {
                         const maxDiscountValue = batch.Discount || 0
                         const minAllowedPrice = batch.SellingPrice - maxDiscountValue
-                        const discountPercentage = (
-                          (maxDiscountValue / batch.SellingPrice) *
-                          100
-                        ).toFixed(0)
+
+                        // 🚀 FIXED: Protect against divide-by-zero errors!
+                        const rawPercent =
+                          batch.SellingPrice > 0 ? (maxDiscountValue / batch.SellingPrice) * 100 : 0
+                        const discountPercentage =
+                          rawPercent % 1 === 0 ? rawPercent.toFixed(0) : rawPercent.toFixed(2)
 
                         return (
                           <tr key={idx}>
-                            <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
+                            <td
+                              style={{
+                                color: 'var(--text-muted)',
+                                fontSize: '13px',
+                                fontWeight: 600
+                              }}
+                            >
                               {new Date(batch.ReceivedDate).toLocaleDateString()}
                             </td>
-                            <td style={{ fontWeight: 700, color: 'var(--text-main)' }}>
+                            <td style={{ fontWeight: 800, color: 'var(--text-main)' }}>
                               {batch.SupplierName || 'Unknown'}
                             </td>
                             <td style={{ color: 'var(--text-muted)' }}>{batch.InitialQuantity}</td>
@@ -336,7 +364,7 @@ export default function ProductCatalog() {
                             <td style={{ color: 'var(--success)', fontWeight: 800 }}>
                               Rs {batch.SellingPrice.toFixed(2)}
                             </td>
-                            <td style={{ color: 'var(--warning)', fontWeight: 700 }}>
+                            <td style={{ color: 'var(--warning)', fontWeight: 800 }}>
                               {discountPercentage}% (Rs {maxDiscountValue.toFixed(2)})
                             </td>
                             <td>

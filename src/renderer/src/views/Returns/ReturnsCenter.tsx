@@ -89,11 +89,28 @@ export default function ReturnsCenter() {
       return alert('Please enter a quantity to return for at least one item.')
     }
 
-    if (
-      window.confirm(
-        `Process return for Rs ${totalRefundAmount.toFixed(2)}?\n\nItems will be added back to inventory.`
-      )
-    ) {
+    // 🚀 SECURITY FIX 1: Enforce whole numbers for physical items
+    const wholeUnits = ['Pcs', 'Box', 'Set']
+    for (const item of itemsToReturn) {
+      const qty = parseFloat(item.QtyToReturn)
+      if (wholeUnits.includes(item.Unit) && qty % 1 !== 0) {
+        return alert(
+          `You cannot return partial quantities (${qty}) for items measured in ${item.Unit} (${item.ProductName}). Must be a whole number.`
+        )
+      }
+    }
+
+    // 🚀 SECURITY FIX 2: Ensure a valid reason is provided
+    const safeReason = returnReason.trim() || 'Manual Return (No Reason Provided)'
+
+    // 🚀 UX FIX: Generate a detailed confirmation message
+    let confirmMessage = `Are you sure you want to process this return?\n\nItems to be returned to stock:\n`
+    itemsToReturn.forEach((item) => {
+      confirmMessage += `- ${item.QtyToReturn} ${item.Unit} of ${item.ProductName}\n`
+    })
+    confirmMessage += `\nTotal Cash to Refund Customer: Rs ${totalRefundAmount.toFixed(2)}`
+
+    if (window.confirm(confirmMessage)) {
       try {
         const payload = {
           ReceiptId: bill.ReceiptId,
@@ -104,7 +121,7 @@ export default function ReturnsCenter() {
             UnitCost: item.UnitCost,
             UnitPrice: item.UnitPrice,
             StockBatchId: item.StockBatchId,
-            Note: returnReason
+            Note: safeReason
           }))
         }
 

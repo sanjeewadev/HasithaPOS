@@ -1,6 +1,8 @@
 // src/renderer/src/views/Reports/ReportsWorkspace.tsx
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import styles from '../../styles/SharedSidebar.module.css'
+import { useAuth } from '../../store/AuthContext' // 🚀 NEW: Import Auth
+
 import Dashboard from './Dashboard'
 import InventoryAlerts from './InventoryAlerts'
 import TodaySales from './TodaySales'
@@ -8,28 +10,35 @@ import SalesHistory from './SalesHistory'
 import CreditAccounts from './CreditAccounts'
 import AuditLogs from './AuditLogs'
 
-// 🚀 IMPORT THE RETURNS CENTER (Note the path goes up to the POS folder)
-import ReturnsCenter from './ReturnsCenter'
-
 export default function ReportsWorkspace() {
-  const [activeTab, setActiveTab] = useState('Dashboard')
+  const { currentUser } = useAuth()
+  const isAdmin = currentUser?.Role === 1
+
+  // Staff defaults to Alerts, Admin defaults to Dashboard
+  const [activeTab, setActiveTab] = useState(isAdmin ? 'Dashboard' : 'Alerts')
+
+  // 🚀 RBAC: Block staff from Dashboard and Audit
+  useEffect(() => {
+    if (!isAdmin && (activeTab === 'Dashboard' || activeTab === 'Audit')) {
+      setActiveTab('Alerts')
+    }
+  }, [activeTab, isAdmin])
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'Dashboard':
-        return <Dashboard />
       case 'Alerts':
         return <InventoryAlerts />
       case 'TodaySales':
         return <TodaySales />
       case 'SalesHistory':
         return <SalesHistory />
-      case 'Returns':
-        return <ReturnsCenter /> // 🚀 Now loads the Returns Center!
       case 'Credit':
         return <CreditAccounts />
+      // 🚀 RBAC: Only render if Admin
+      case 'Dashboard':
+        return isAdmin ? <Dashboard /> : null
       case 'Audit':
-        return <AuditLogs />
+        return isAdmin ? <AuditLogs /> : null
       default:
         return null
     }
@@ -38,27 +47,30 @@ export default function ReportsWorkspace() {
   return (
     <div className={styles.container}>
       <aside className={styles.sidebar}>
-        {/* Renamed slightly to reflect that this is now the Backoffice Hub */}
         <div className={styles.menuHeader}>Management & Logs</div>
 
-        <button
-          className={`${styles.navButton} ${activeTab === 'Dashboard' ? styles.activeBtn : ''}`}
-          onClick={() => setActiveTab('Dashboard')}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        {/* 🚀 RBAC: Hide Dashboard from Staff */}
+        {isAdmin && (
+          <button
+            className={`${styles.navButton} ${activeTab === 'Dashboard' ? styles.activeBtn : ''}`}
+            onClick={() => setActiveTab('Dashboard')}
           >
-            <rect x="3" y="3" width="7" height="9"></rect>
-            <rect x="14" y="3" width="7" height="5"></rect>
-            <rect x="14" y="12" width="7" height="9"></rect>
-            <rect x="3" y="16" width="7" height="5"></rect>
-          </svg>
-          Dashboard
-        </button>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="3" width="7" height="9"></rect>
+              <rect x="14" y="3" width="7" height="5"></rect>
+              <rect x="14" y="12" width="7" height="9"></rect>
+              <rect x="3" y="16" width="7" height="5"></rect>
+            </svg>
+            Executive Dashboard
+          </button>
+        )}
 
         <button
           className={`${styles.navButton} ${activeTab === 'Alerts' ? styles.activeBtn : ''}`}
@@ -68,6 +80,7 @@ export default function ReportsWorkspace() {
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
+            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
@@ -86,6 +99,7 @@ export default function ReportsWorkspace() {
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
+            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
@@ -103,6 +117,7 @@ export default function ReportsWorkspace() {
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
+            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
@@ -115,10 +130,9 @@ export default function ReportsWorkspace() {
           Sales History
         </button>
 
-        {/* 🚀 NEW BUTTON: RETURNS CENTER */}
         <button
-          className={`${styles.navButton} ${activeTab === 'Returns' ? styles.activeBtn : ''}`}
-          onClick={() => setActiveTab('Returns')}
+          className={`${styles.navButton} ${activeTab === 'Credit' ? styles.activeBtn : ''}`}
+          onClick={() => setActiveTab('Credit')}
         >
           <svg
             viewBox="0 0 24 24"
@@ -128,44 +142,31 @@ export default function ReportsWorkspace() {
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <polyline points="9 14 4 9 9 4"></polyline>
-            <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
-          </svg>
-          Returns Center
-        </button>
-
-        <button
-          className={`${styles.navButton} ${activeTab === 'Credit' ? styles.activeBtn : ''}`}
-          onClick={() => setActiveTab('Credit')}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
             <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
             <line x1="1" y1="10" x2="23" y2="10"></line>
           </svg>
           Credit Accounts
         </button>
 
-        <button
-          className={`${styles.navButton} ${activeTab === 'Audit' ? styles.activeBtn : ''}`}
-          onClick={() => setActiveTab('Audit')}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        {/* 🚀 RBAC: Hide Audit Logs from Staff */}
+        {isAdmin && (
+          <button
+            className={`${styles.navButton} ${activeTab === 'Audit' ? styles.activeBtn : ''}`}
+            onClick={() => setActiveTab('Audit')}
           >
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-          </svg>
-          Audit Logs
-        </button>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            Audit Logs
+          </button>
+        )}
       </aside>
 
       <section className={styles.contentArea}>{renderContent()}</section>

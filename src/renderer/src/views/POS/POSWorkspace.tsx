@@ -10,6 +10,7 @@ interface CartItem {
   name: string
   unitPrice: string
   originalPrice: number
+  buyPrice: number
   quantity: string
   maxDiscount: number
   availableStock: number
@@ -26,7 +27,6 @@ export default function POSWorkspace() {
   const [batchModalProduct, setBatchModalProduct] = useState<Product | null>(null)
   const [availableBatches, setAvailableBatches] = useState<any[]>([])
 
-  // 🚀 CHECKOUT STATES (Restored downPayment for Credit Sales)
   const [checkoutMode, setCheckoutMode] = useState<'none' | 'cash' | 'credit'>('none')
   const [customerName, setCustomerName] = useState('')
   const [downPayment, setDownPayment] = useState('')
@@ -102,6 +102,7 @@ export default function POSWorkspace() {
       name: product.Name,
       unitPrice: batch.SellingPrice.toString(),
       originalPrice: batch.SellingPrice,
+      buyPrice: batch.CostPrice,
       quantity: '1',
       maxDiscount: batch.Discount,
       availableStock: batch.RemainingQuantity,
@@ -152,13 +153,17 @@ export default function POSWorkspace() {
   }, 0)
   const grandTotal = subTotal - totalDiscount
 
-  // 🚀 MATH FOR CREDIT MODAL
+  // 🚀 SECURITY CHECKS
+  const hasLossItem = cartItems.some((item) => (parseFloat(item.unitPrice) || 0) < item.buyPrice)
+  const hasZeroQty = cartItems.some((item) => (parseFloat(item.quantity) || 0) <= 0)
+
   const balanceDue = Math.max(0, grandTotal - (parseFloat(downPayment) || 0))
 
-  // 🚀 MODAL PROCESS SALE (Handles Credit Down Payments!)
   const handleProcessSale = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     if (cartItems.length === 0) return alert('Cart is empty!')
+    if (hasLossItem) return alert('Cannot process sale. One or more items are priced below cost!')
+    if (hasZeroQty) return alert('Cannot process sale. One or more items have a quantity of 0!')
 
     if (checkoutMode === 'credit' && !customerName.trim()) {
       return alert('Customer name is required for a credit sale!')
@@ -168,11 +173,8 @@ export default function POSWorkspace() {
     try {
       const receiptId = `INV-${Date.now()}`
       const isCredit = checkoutMode === 'credit'
-
-      // Calculate how much was paid upfront
       const paidAmt = isCredit ? parseFloat(downPayment) || 0 : grandTotal
 
-      // Status: 0 = Paid, 1 = Unpaid, 2 = PartiallyPaid
       let status = 0
       if (isCredit) {
         if (paidAmt === 0) status = 1
@@ -208,7 +210,6 @@ export default function POSWorkspace() {
       setDownPayment('')
       loadData()
 
-      // 🚀 SUCCESS MESSAGE
       alert(`✅ Sale Successful!\nReceipt ID: ${receiptId}`)
     } catch (error: any) {
       alert('Checkout failed: ' + error.message)
@@ -217,9 +218,10 @@ export default function POSWorkspace() {
     }
   }
 
-  // 🚀 INSTANT FAST CHECKOUT (Skips Modal)
   const handleFastCheckout = async () => {
     if (cartItems.length === 0) return alert('Cart is empty!')
+    if (hasLossItem) return alert('Cannot process sale. One or more items are priced below cost!')
+    if (hasZeroQty) return alert('Cannot process sale. One or more items have a quantity of 0!')
 
     setIsProcessing(true)
     try {
@@ -251,7 +253,6 @@ export default function POSWorkspace() {
       setSelectedCartUid(null)
       loadData()
 
-      // 🚀 SUCCESS MESSAGE
       alert(`✅ Fast Checkout Complete!\nReceipt ID: ${receiptId}`)
     } catch (error: any) {
       alert('Checkout failed: ' + error.message)
@@ -378,10 +379,9 @@ export default function POSWorkspace() {
                   </span>
                 </div>
                 <div className={styles.infoRow}>
-                  Max Discount:
+                  Max Configured Disc:
                   <span className={styles.infoValueWarning}>
-                    {((activeEditItem.maxDiscount / activeEditItem.originalPrice) * 100).toFixed(0)}
-                    % (Rs {(activeEditItem.originalPrice - activeEditItem.maxDiscount).toFixed(2)})
+                    Rs {activeEditItem.maxDiscount.toFixed(2)}
                   </span>
                 </div>
                 {activeEditItem.maxDiscount > 0 &&
@@ -396,11 +396,7 @@ export default function POSWorkspace() {
                         )
                       }
                     >
-                      ⚡ Apply{' '}
-                      {((activeEditItem.maxDiscount / activeEditItem.originalPrice) * 100).toFixed(
-                        0
-                      )}
-                      % Discount
+                      ⚡ Quick Apply Max Discount
                     </button>
                   )}
               </div>
@@ -418,12 +414,25 @@ export default function POSWorkspace() {
                   <label className={styles.editLabel} style={{ marginBottom: 0 }}>
                     Unit Price
                   </label>
-                  {activeUnitPrice < activeEditItem.originalPrice - activeEditItem.maxDiscount && (
-                    <span className={styles.dangerTextCompact}>⚠️ BELOW MINIMUM!</span>
-                  )}
+
+                  {/* 🚀 FLEXIBLE WARNING MESSAGES */}
+                  {activeUnitPrice < activeEditItem.buyPrice ? (
+                    <span className={styles.dangerTextCompact}>
+                      ⛔ BELOW COST (Rs {activeEditItem.buyPrice.toFixed(2)})!
+                    </span>
+                  ) : activeUnitPrice <
+                    activeEditItem.originalPrice - activeEditItem.maxDiscount ? (
+                    <span className={styles.warningTextCompact}>⚠️ OVER MAX DISCOUNT</span>
+                  ) : null}
                 </div>
                 <div
-                  className={`${styles.priceInputBox} ${activeUnitPrice < activeEditItem.originalPrice - activeEditItem.maxDiscount ? styles.danger : ''}`}
+                  className={`${styles.priceInputBox} ${
+                    activeUnitPrice < activeEditItem.buyPrice
+                      ? styles.danger
+                      : activeUnitPrice < activeEditItem.originalPrice - activeEditItem.maxDiscount
+                        ? styles.warning
+                        : ''
+                  }`}
                 >
                   <div className={styles.pricePrefix}>Rs</div>
                   <input
@@ -497,10 +506,14 @@ export default function POSWorkspace() {
             cartItems.map((item) => {
               const itemPrice = parseFloat(item.unitPrice) || 0
               const itemQty = parseFloat(item.quantity) || 0
+              const isBelowCost = itemPrice < item.buyPrice
+              const isOverDiscount =
+                itemPrice < item.originalPrice - item.maxDiscount && !isBelowCost
+
               return (
                 <div
                   key={item.uid}
-                  className={`${styles.cartItem} ${selectedCartUid === item.uid ? styles.active : ''}`}
+                  className={`${styles.cartItem} ${selectedCartUid === item.uid ? styles.active : ''} ${isBelowCost ? styles.cartItemDanger : ''}`}
                   onClick={() => setSelectedCartUid(item.uid)}
                 >
                   <div className={styles.cartItemLeft}>
@@ -509,8 +522,14 @@ export default function POSWorkspace() {
                       Rs {itemPrice.toFixed(2)} × {itemQty} {item.unit}
                     </div>
                     {itemPrice < item.originalPrice && (
-                      <div className={styles.cartItemDiscountInfo}>
-                        Original: Rs {item.originalPrice.toFixed(2)}
+                      <div
+                        className={`${styles.cartItemDiscountInfo} ${isBelowCost ? styles.discDanger : isOverDiscount ? styles.discWarning : ''}`}
+                      >
+                        {isBelowCost
+                          ? '⛔ LOSS: BELOW COST'
+                          : isOverDiscount
+                            ? '⚠️ OVER MAX DISC'
+                            : `Original: Rs ${item.originalPrice.toFixed(2)}`}
                       </div>
                     )}
                   </div>
@@ -536,6 +555,45 @@ export default function POSWorkspace() {
         </div>
 
         <div className={styles.checkoutFooter}>
+          {/* 🚀 LOSS PREVENTION MESSAGE */}
+          {hasLossItem && (
+            <div
+              style={{
+                backgroundColor: '#fef2f2',
+                color: '#dc2626',
+                padding: '10px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 800,
+                textAlign: 'center',
+                marginBottom: '15px',
+                border: '1px solid #fecaca'
+              }}
+            >
+              ⛔ CHECKOUT BLOCKED: One or more items are priced below their cost price.
+            </div>
+          )}
+
+          {/* 🚀 ZERO QUANTITY PREVENTION MESSAGE */}
+          {hasZeroQty && (
+            <div
+              style={{
+                backgroundColor: '#fffbeb',
+                color: '#d97706',
+                padding: '10px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 800,
+                textAlign: 'center',
+                marginBottom: '15px',
+                border: '1px solid #fde68a'
+              }}
+            >
+              ⚠️ CHECKOUT BLOCKED: An item in your cart has 0 quantity. Update the quantity or
+              remove it.
+            </div>
+          )}
+
           <div className={styles.summaryRow}>
             <span>Subtotal</span>
             <span>Rs {subTotal.toFixed(2)}</span>
@@ -557,6 +615,7 @@ export default function POSWorkspace() {
               onClick={() =>
                 cartItems.length > 0 ? setCheckoutMode('cash') : alert('Cart is empty!')
               }
+              disabled={hasLossItem || hasZeroQty}
             >
               PAY & PRINT
             </button>
@@ -565,13 +624,14 @@ export default function POSWorkspace() {
               onClick={() =>
                 cartItems.length > 0 ? setCheckoutMode('credit') : alert('Cart is empty!')
               }
+              disabled={hasLossItem || hasZeroQty}
             >
               CREDIT SALE
             </button>
             <button
               className={`${styles.checkoutBtn} ${styles.btnCheckout}`}
               onClick={handleFastCheckout}
-              disabled={isProcessing}
+              disabled={isProcessing || hasLossItem || hasZeroQty}
             >
               {isProcessing ? '...' : 'CHECKOUT'}
             </button>
@@ -623,7 +683,7 @@ export default function POSWorkspace() {
       )}
 
       {/* ========================================= */}
-      {/* CHECKOUT MODALS (CASH & CREDIT RESTORED)  */}
+      {/* CHECKOUT MODALS (CASH & CREDIT)           */}
       {/* ========================================= */}
       {checkoutMode !== 'none' && (
         <div className={styles.modalOverlay}>
@@ -656,7 +716,6 @@ export default function POSWorkspace() {
                 </div>
               </div>
 
-              {/* 🚀 RESTORED CREDIT LAYOUT */}
               {checkoutMode === 'credit' && (
                 <>
                   <div className={styles.checkoutInputGroup}>

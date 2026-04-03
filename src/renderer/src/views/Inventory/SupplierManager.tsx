@@ -44,34 +44,52 @@ export default function SupplierManager() {
     setPhone(sup.Phone || '')
   }
 
+  // 🚀 SECURED: Trim whitespace and catch Duplicate Name errors
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name) return alert('Company name is required!')
+
+    const safeName = name.trim()
+    const safePhone = phone.trim()
+
+    if (!safeName) return alert('Company name is required!')
 
     try {
       if (editingSupplierId) {
         // @ts-ignore
-        await window.api.updateSupplier({ Id: editingSupplierId, Name: name, Phone: phone })
-        alert('Supplier updated successfully!')
+        await window.api.updateSupplier({ Id: editingSupplierId, Name: safeName, Phone: safePhone })
+        alert('✅ Supplier updated successfully!')
       } else {
         // @ts-ignore
-        await window.api.addSupplier({ Name: name, Phone: phone })
+        await window.api.addSupplier({ Name: safeName, Phone: safePhone })
+        alert('✅ New supplier added successfully!')
       }
       handleClear()
       loadData()
-    } catch (err) {
-      alert('Error saving supplier.')
+    } catch (err: any) {
+      if (err.message && err.message.includes('UNIQUE constraint failed')) {
+        alert('🛑 A supplier with this company name already exists in your database.')
+      } else {
+        alert('Error saving supplier: ' + (err.message || 'Unknown error'))
+      }
     }
   }
 
+  // 🚀 SECURED: Catch Foreign Key restrictions gracefully
   const handleDelete = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this supplier?')) {
       try {
         // @ts-ignore
         await window.api.deleteSupplier(id)
         loadData()
-      } catch (err) {
-        alert('Error deleting supplier.')
+        alert('✅ Supplier deleted successfully.')
+      } catch (err: any) {
+        if (err.message && err.message.includes('FOREIGN KEY constraint failed')) {
+          alert(
+            '🛑 ACTION DENIED: This supplier has invoice history!\n\nYou cannot delete a supplier who has provided stock. This protects your financial records. You can edit their name instead.'
+          )
+        } else {
+          alert('Error deleting supplier: ' + (err.message || 'Unknown error'))
+        }
       }
     }
   }
@@ -126,7 +144,6 @@ export default function SupplierManager() {
           <table className={styles.classicTable}>
             <thead>
               <tr>
-                {/* 🚀 FIXED: Brought back the correct Main Table Headers */}
                 <th>COMPANY NAME</th>
                 <th>PHONE NUMBER</th>
                 <th style={{ textAlign: 'right' }}>ACTIONS</th>
@@ -145,7 +162,7 @@ export default function SupplierManager() {
               ) : (
                 displayedSuppliers.map((sup) => (
                   <tr key={sup.Id}>
-                    <td style={{ fontWeight: 700 }}>{sup.Name}</td>
+                    <td style={{ fontWeight: 800 }}>{sup.Name}</td>
                     <td style={{ fontFamily: 'monospace', fontSize: '15px' }}>
                       {sup.Phone || '-'}
                     </td>

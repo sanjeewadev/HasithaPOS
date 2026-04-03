@@ -4,6 +4,17 @@ import { User } from '../../types/models'
 import { useAuth } from '../../store/AuthContext'
 import styles from './UserManager.module.css'
 
+// 🚀 FIXED PERMISSIONS FOR STAFF: Defined in code for maximum security
+const STAFF_PERMISSIONS = [
+  'POS',
+  'Returns',
+  'ViewProducts',
+  'InventoryAlerts',
+  'TodaySales',
+  'SalesHistory',
+  'CreditAccounts'
+].join(',')
+
 // Replicating your C# Base64 Password Hashing
 async function hashPassword(password: string): Promise<string> {
   if (!password) return ''
@@ -13,17 +24,6 @@ async function hashPassword(password: string): Promise<string> {
   const binaryString = String.fromCharCode(...hashArray)
   return btoa(binaryString)
 }
-
-const PERMISSION_LIST = [
-  { id: 'POS', label: '🛒 Point of Sale' },
-  { id: 'TodaySales', label: "🎯 Today's Sales" },
-  { id: 'Credit', label: '💳 Credit / Debtors' },
-  { id: 'Returns', label: '↩️ Sales Returns' },
-  { id: 'Suppliers', label: '🚛 Suppliers & Stock In' },
-  { id: 'StockAdjust', label: '⚖️ Adjust Stock' },
-  { id: 'Products', label: '📦 Products' },
-  { id: 'Reports', label: '📊 Reports' }
-]
 
 export default function UserManager() {
   const { currentUser } = useAuth()
@@ -36,15 +36,14 @@ export default function UserManager() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [existingHash, setExistingHash] = useState('')
-  const [role, setRole] = useState<number>(2) // 1 = Admin, 2 = Employee
+  const [role, setRole] = useState<number>(2) // 1 = Admin, 2 = Staff
   const [isActive, setIsActive] = useState<boolean>(true)
-  const [selectedPerms, setSelectedPerms] = useState<string[]>([])
 
   const loadUsers = async () => {
     try {
       // @ts-ignore
       const data = await window.api.getUsers()
-      setUsers(data)
+      setUsers(data || [])
     } catch (error) {
       console.error('Failed to load users', error)
     }
@@ -58,11 +57,10 @@ export default function UserManager() {
     setEditingId(u.Id)
     setFullName(u.FullName)
     setUsername(u.Username)
-    setPassword('') // Keep blank so we don't accidentally overwrite it
+    setPassword('')
     setExistingHash(u.PasswordHash)
     setRole(u.Role)
     setIsActive(u.IsActive === true || u.IsActive === 1)
-    setSelectedPerms(u.Permissions ? u.Permissions.split(',') : [])
   }
 
   const handleClear = () => {
@@ -73,41 +71,35 @@ export default function UserManager() {
     setExistingHash('')
     setRole(2)
     setIsActive(true)
-    setSelectedPerms([])
-  }
-
-  const togglePermission = (permId: string) => {
-    setSelectedPerms((prev) =>
-      prev.includes(permId) ? prev.filter((p) => p !== permId) : [...prev, permId]
-    )
   }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!fullName.trim() || !username.trim()) {
-      alert('Name and Username are required!')
-      return
+
+    const safeFullName = fullName.trim()
+    const safeUsername = username.trim().toLowerCase()
+
+    if (!safeFullName || !safeUsername) {
+      return alert('Name and Username are required!')
     }
 
     if (!editingId && !password) {
-      alert('A password is required for new users!')
-      return
+      return alert('A password is required for new users!')
     }
 
-    // Determine final password hash
     let finalHash = existingHash
     if (password) {
       finalHash = await hashPassword(password)
     }
 
-    // Admins always get 'ALL' permissions
-    const finalPerms = role === 1 ? 'ALL' : selectedPerms.join(',')
+    // 🚀 AUTOMATIC PERMISSION ASSIGNMENT
+    const finalPerms = role === 1 ? 'ALL' : STAFF_PERMISSIONS
 
     const payload = {
       Id: editingId,
-      Username: username.trim(),
+      Username: safeUsername,
       PasswordHash: finalHash,
-      FullName: fullName.trim(),
+      FullName: safeFullName,
       Role: role,
       IsActive: isActive,
       Permissions: finalPerms
@@ -117,16 +109,14 @@ export default function UserManager() {
       if (editingId) {
         // @ts-ignore
         await window.api.updateUser(payload)
+        alert('User updated successfully.')
       } else {
-        const isDuplicate = users.some(
-          (u) => u.Username.toLowerCase() === username.trim().toLowerCase()
-        )
-        if (isDuplicate) {
-          alert(`Username '${username}' is already taken.`)
-          return
-        }
+        const isDuplicate = users.some((u) => u.Username.toLowerCase() === safeUsername)
+        if (isDuplicate) return alert(`Username '${safeUsername}' is already taken.`)
+
         // @ts-ignore
         await window.api.addUser(payload)
+        alert('User created successfully.')
       }
       handleClear()
       loadUsers()
@@ -136,9 +126,8 @@ export default function UserManager() {
   }
 
   const handleToggleBlock = async (u: User, currentStatus: boolean) => {
-    if (u.Role === 0 || (u.Role === 1 && u.Id === currentUser?.Id)) {
-      alert('You cannot block your own admin account.')
-      return
+    if (u.Role === 0 || u.Id === currentUser?.Id) {
+      return alert('Security: You cannot block yourself or the Master Root account.')
     }
 
     if (
@@ -166,17 +155,16 @@ export default function UserManager() {
 
   return (
     <div className={styles.container}>
-      {/* LEFT PANEL: User DataGrid */}
+      {/* LEFT PANEL: User List */}
       <div className={styles.panel}>
         <div className={styles.panelHeader}>
-          <span style={{ fontWeight: 'bold' }}>STAFF ACCOUNTS</span>
+          <span style={{ fontWeight: 900, fontSize: '14px' }}>SYSTEM ACCOUNTS</span>
           <input
             type="text"
-            placeholder="Search users..."
+            placeholder="Search by name or username..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className={styles.classicInput}
-            style={{ width: '250px', padding: '8px' }}
+            className={styles.searchInput}
           />
         </div>
 
@@ -188,58 +176,70 @@ export default function UserManager() {
                 <th>FULL NAME</th>
                 <th>ROLE</th>
                 <th>STATUS</th>
-                <th style={{ textAlign: 'right' }}>ACTIONS</th>
+                <th style={{ textAlign: 'right' }}>COMMAND</th>
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.length === 0 && (
+              {filteredUsers.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={5}
-                    style={{ textAlign: 'center', padding: '30px', color: '#64748B' }}
-                  >
-                    No users found. Create an account on the right.
+                  <td colSpan={5} className={styles.emptyMsg}>
+                    No users found.
                   </td>
                 </tr>
-              )}
-              {filteredUsers.map((u) => {
-                const active = u.IsActive === true || u.IsActive === 1
-                return (
-                  <tr key={u.Id} onClick={() => handleEdit(u)}>
-                    <td style={{ fontWeight: 'bold', color: '#1E293B' }}>{u.Username}</td>
-                    <td>{u.FullName}</td>
-                    <td style={{ color: '#64748B' }}>{u.Role === 1 ? 'Admin' : 'Staff'}</td>
-                    <td>
-                      <span className={active ? styles.statusActive : styles.statusBlocked}>
-                        {active ? 'ACTIVE' : 'BLOCKED'}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <button
-                        className={active ? styles.blockBtn : styles.unblockBtn}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleToggleBlock(u, active)
+              ) : (
+                filteredUsers.map((u) => {
+                  const active = u.IsActive === true || u.IsActive === 1
+                  return (
+                    <tr
+                      key={u.Id}
+                      onClick={() => handleEdit(u)}
+                      className={editingId === u.Id ? styles.rowActive : ''}
+                    >
+                      <td
+                        style={{
+                          fontWeight: 800,
+                          color: 'var(--primary)',
+                          fontFamily: 'monospace'
                         }}
                       >
-                        {active ? 'BLOCK' : 'UNBLOCK'}
-                      </button>
-                    </td>
-                  </tr>
-                )
-              })}
+                        {u.Username}
+                      </td>
+                      <td style={{ fontWeight: 700 }}>{u.FullName}</td>
+                      <td>
+                        <span className={u.Role === 1 ? styles.badgeAdmin : styles.badgeStaff}>
+                          {u.Role === 1 ? 'ADMIN' : 'STAFF'}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={active ? styles.statusActive : styles.statusBlocked}>
+                          {active ? 'ACTIVE' : 'BLOCKED'}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <button
+                          className={active ? styles.blockBtn : styles.unblockBtn}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleToggleBlock(u, active)
+                          }}
+                        >
+                          {active ? 'BLOCK' : 'UNBLOCK'}
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* RIGHT PANEL: Add/Edit Form */}
+      {/* RIGHT PANEL: Edit Form */}
       <div className={styles.panel}>
-        <h2 className={styles.panelHeader} style={{ fontWeight: 'bold', borderBottom: 'none' }}>
-          {editingId ? `EDIT: ${username}` : 'CREATE NEW USER'}
-        </h2>
+        <h2 className={styles.formTitle}>{editingId ? 'MODIFY ACCOUNT' : 'REGISTER NEW USER'}</h2>
 
-        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+        <form onSubmit={handleSave} className={styles.userForm}>
           <div className={styles.formGroup}>
             <label>FULL NAME *</label>
             <input
@@ -247,84 +247,62 @@ export default function UserManager() {
               className={styles.classicInput}
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              autoFocus
+              placeholder="e.g. John Doe"
               required
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <div className={styles.formGroup}>
-              <label>USERNAME *</label>
-              <input
-                type="text"
-                className={styles.classicInput}
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
-            </div>
-            <div className={styles.formGroup}>
-              <label>ROLE</label>
-              <select
-                className={styles.classicSelect}
-                value={role}
-                onChange={(e) => setRole(Number(e.target.value))}
-              >
-                <option value={2}>Staff (Limited)</option>
-                <option value={1}>Administrator</option>
-              </select>
-            </div>
+          <div className={styles.formGroup}>
+            <label>USERNAME *</label>
+            <input
+              type="text"
+              className={styles.classicInput}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="login_id"
+              required
+              disabled={!!editingId} // Usernames usually shouldn't change
+            />
           </div>
 
           <div className={styles.formGroup}>
-            <label>
-              PASSWORD{' '}
-              {editingId && (
-                <span style={{ color: '#94A3B8', fontWeight: 'normal' }}>
-                  (Leave blank to keep current)
-                </span>
-              )}
-            </label>
+            <label>SYSTEM ROLE</label>
+            <select
+              className={styles.classicSelect}
+              value={role}
+              onChange={(e) => setRole(Number(e.target.value))}
+            >
+              <option value={2}>Staff (Fixed Permissions)</option>
+              <option value={1}>Administrator (Full Access)</option>
+            </select>
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>PASSWORD {editingId && <span>(Leave blank to keep current)</span>}</label>
             <input
               type="password"
               className={styles.classicInput}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
             />
           </div>
 
-          {/* PERMISSIONS GRID (Only show if role is Staff) */}
-          {role === 2 && (
-            <>
-              <label
-                style={{ fontWeight: 700, color: '#334155', fontSize: '13px', marginBottom: '5px' }}
-              >
-                ACCESS PERMISSIONS
-              </label>
-              <div className={styles.permissionsGrid}>
-                {PERMISSION_LIST.map((perm) => (
-                  <label key={perm.id} className={styles.permissionItem}>
-                    <input
-                      type="checkbox"
-                      checked={selectedPerms.includes(perm.id)}
-                      onChange={() => togglePermission(perm.id)}
-                      style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                    />
-                    {perm.label}
-                  </label>
-                ))}
-              </div>
-            </>
-          )}
-
-          <div style={{ flex: 1 }}></div>
+          <div className={styles.infoBox}>
+            <div className={styles.infoTitle}>Note on Permissions:</div>
+            <p>
+              {role === 1
+                ? 'Administrators have unrestricted access to all system modules, including settings and deletion.'
+                : 'Staff are automatically granted access to: POS, Returns, View Products, Alerts, and Sales History.'}
+            </p>
+          </div>
 
           <div className={styles.btnGroup}>
             <button type="button" className={styles.clearBtn} onClick={handleClear}>
-              CLEAR
+              {editingId ? 'CANCEL' : 'CLEAR'}
             </button>
             <button type="submit" className={styles.primaryBtn}>
-              {editingId ? 'SAVE CHANGES' : 'CREATE USER'}
+              {editingId ? 'UPDATE ACCOUNT' : 'CREATE ACCOUNT'}
             </button>
           </div>
         </form>

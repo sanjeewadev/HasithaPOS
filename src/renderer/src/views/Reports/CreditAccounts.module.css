@@ -39,11 +39,12 @@
   font-size: 14px;
   background: var(--bg-canvas);
   transition: 0.2s;
+  outline: none;
 }
 .searchInput:focus {
   border-color: var(--primary);
-  outline: none;
   background: var(--bg-surface);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .summaryBox {
@@ -102,6 +103,9 @@
   padding: 16px;
   border-bottom: 1px solid var(--border-color);
   color: var(--text-main);
+}
+.classicTable tr:hover td {
+  background: var(--bg-hover);
 }
 
 .emptyMsg {
@@ -188,6 +192,11 @@
   text-align: center;
 }
 
+.paymentForm {
+  display: flex;
+  flex-direction: column;
+}
+
 .formGroup {
   display: flex;
   flex-direction: column;
@@ -250,7 +259,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 15px;
-  margin-top: 15px;
+  margin-top: 25px;
   border-top: 1px solid var(--border-color);
   padding-top: 20px;
 }

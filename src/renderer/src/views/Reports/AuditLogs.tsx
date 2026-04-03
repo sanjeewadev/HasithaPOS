@@ -21,6 +21,7 @@ export default function AuditLogs() {
     setLoading(true)
     try {
       // @ts-ignore
+      // 🚨 BACKEND REMINDER: Ensure your backend appends ' 23:59:59' to the endDate!
       const data = await window.api.getAuditLogs(startDate, endDate)
       setLogs(data || [])
     } catch (err) {
@@ -30,9 +31,10 @@ export default function AuditLogs() {
     }
   }
 
+  // 🚀 UX FIX: Auto-load logs whenever the date boundaries change
   useEffect(() => {
     loadLogs()
-  }, [])
+  }, [startDate, endDate])
 
   // Process and Filter the Logs
   const displayedLogs = useMemo(() => {
@@ -62,13 +64,17 @@ export default function AuditLogs() {
     return filtered
   }, [logs, filterType, searchQuery])
 
-  // Helper to determine the badge and math
+  // 🚀 SECURITY FIX: Safe math fallbacks to prevent White Screen of Death
   const getEventDetails = (log: any) => {
+    const qty = parseFloat(log.Quantity) || 0
+    const price = parseFloat(log.UnitPrice) || 0
+    const cost = parseFloat(log.UnitCost) || 0
+
     if (log.IsVoided === 1) {
       return {
         badge: <span className={`${styles.badge} ${styles.badgeVoid}`}>VOIDED SALE</span>,
         impactLabel: 'Reversed Revenue',
-        financial: log.Quantity * log.UnitPrice,
+        financial: qty * price,
         stockDir: '+',
         stockClass: styles.textSuccess
       }
@@ -77,7 +83,7 @@ export default function AuditLogs() {
       return {
         badge: <span className={`${styles.badge} ${styles.badgeReturn}`}>CUSTOMER RETURN</span>,
         impactLabel: 'Refund Given',
-        financial: log.Quantity * log.UnitPrice,
+        financial: qty * price,
         stockDir: '+',
         stockClass: styles.textSuccess
       }
@@ -86,7 +92,7 @@ export default function AuditLogs() {
       return {
         badge: <span className={`${styles.badge} ${styles.badgeAdjust}`}>STOCK ADJUSTMENT</span>,
         impactLabel: 'Loss / Value',
-        financial: log.Quantity * log.UnitCost, // Adjustments lose cost value, not retail
+        financial: qty * cost, // Adjustments lose cost value, not retail
         stockDir: '-',
         stockClass: styles.textDanger
       }
@@ -127,7 +133,7 @@ export default function AuditLogs() {
               required
             />
             <button type="submit" className={styles.loadBtn} disabled={loading}>
-              {loading ? 'LOADING...' : 'RUN REPORT'}
+              {loading ? 'LOADING...' : 'REFRESH NOW'}
             </button>
           </div>
         </form>
@@ -192,15 +198,15 @@ export default function AuditLogs() {
                   </td>
                 </tr>
               ) : (
-                displayedLogs.map((log) => {
+                displayedLogs.map((log, idx) => {
                   const details = getEventDetails(log)
                   return (
-                    <tr key={log.Id}>
+                    <tr key={log.Id || idx}>
                       <td style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>
                         {new Date(log.Date).toLocaleString()}
                       </td>
                       <td>{details.badge}</td>
-                      <td style={{ fontWeight: 800 }}>{log.ProductName}</td>
+                      <td style={{ fontWeight: 800 }}>{log.ProductName || 'System Event'}</td>
                       <td style={{ fontSize: '12px' }}>
                         {log.ReceiptId && (
                           <strong style={{ color: 'var(--primary)', fontFamily: 'monospace' }}>
@@ -216,7 +222,7 @@ export default function AuditLogs() {
                         className={details.stockClass}
                       >
                         {details.stockDir}
-                        {log.Quantity}{' '}
+                        {parseFloat(log.Quantity) || 0}{' '}
                         <span
                           style={{
                             fontSize: '11px',
@@ -224,7 +230,7 @@ export default function AuditLogs() {
                             color: 'var(--text-muted)'
                           }}
                         >
-                          {log.Unit}
+                          {log.Unit || ''}
                         </span>
                       </td>
                       <td style={{ textAlign: 'right' }}>

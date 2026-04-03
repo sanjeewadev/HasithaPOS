@@ -18,7 +18,7 @@ export default function AdjustStock() {
 
   // Form State
   const [selectedBatchId, setSelectedBatchId] = useState('')
-  const [qtyToRemove, setQtyToRemove] = useState('') // 🚀 Kept as string for smooth typing!
+  const [qtyToRemove, setQtyToRemove] = useState('')
   const [reason, setReason] = useState('0') // 0 = Correction, 1 = Lost
   const [note, setNote] = useState('')
 
@@ -37,7 +37,6 @@ export default function AdjustStock() {
     loadBaseData()
   }, [])
 
-  // 🚀 FIXED: Only show MAIN (Root) categories in the dropdown to keep it clean!
   const mainCategories = useMemo(() => {
     return categories.filter((c) => c.ParentId === null)
   }, [categories])
@@ -52,7 +51,15 @@ export default function AdjustStock() {
     try {
       // @ts-ignore
       const batches = await window.api.getProductBatches(prod.Id)
-      setActiveBatches(batches.filter((b: any) => b.RemainingQuantity > 0))
+      // 🚀 Sort so newest/active batches are at the top
+      const sortedBatches = batches
+        .filter((b: any) => b.RemainingQuantity > 0)
+        .sort(
+          (a: any, b: any) =>
+            new Date(b.ReceivedDate).getTime() - new Date(a.ReceivedDate).getTime()
+        )
+
+      setActiveBatches(sortedBatches)
 
       // @ts-ignore
       const history = await window.api.getProductAdjustments(prod.Id)
@@ -69,15 +76,32 @@ export default function AdjustStock() {
     const qty = parseFloat(qtyToRemove)
     if (isNaN(qty) || qty <= 0) return alert('Enter a valid quantity greater than 0.')
 
+    // 🚀 SECURITY FIX 1: Enforce whole numbers for physical items
+    const wholeUnits = ['Pcs', 'Box', 'Set']
+    if (wholeUnits.includes(selectedProduct.Unit) && qty % 1 !== 0) {
+      return alert(
+        `You cannot remove partial quantities (${qty}) for items measured in ${selectedProduct.Unit}. Must be a whole number.`
+      )
+    }
+
+    // 🚀 SECURITY FIX 2: Enforce audit notes for lost items
+    const safeNote = note.trim()
+    if (reason === '1' && safeNote.length < 5) {
+      return alert(
+        'SECURITY REQUIREMENT: You must provide a clear reason/note (at least 5 characters) explaining why this item is being marked as Lost or Damaged.'
+      )
+    }
+
     const batch = activeBatches.find((b) => b.Id.toString() === selectedBatchId)
     if (!batch) return
+
     if (qty > batch.RemainingQuantity) {
       return alert(`Cannot remove ${qty}. Only ${batch.RemainingQuantity} left in this batch.`)
     }
 
     if (
       window.confirm(
-        `Are you sure you want to permanently remove ${qty} ${selectedProduct.Unit} from stock?`
+        `🚨 WARNING: You are about to permanently remove ${qty} ${selectedProduct.Unit} of ${selectedProduct.Name} from the system.\n\nFinancial Loss: Rs ${(qty * batch.CostPrice).toFixed(2)}\n\nProceed?`
       )
     ) {
       try {
@@ -86,15 +110,15 @@ export default function AdjustStock() {
           StockBatchId: parseInt(selectedBatchId),
           Quantity: qty,
           Reason: parseInt(reason),
-          Note: note || `Manual adjustment`
+          Note: safeNote || `Manual correction adjustment`
         }
 
         // @ts-ignore
         await window.api.adjustStock(payload)
-        alert('Stock removed successfully.')
+        alert('✅ Stock removed successfully. Financial records updated.')
 
         loadBaseData()
-        handleSelectProduct(selectedProduct)
+        handleSelectProduct(selectedProduct) // Refresh the exact product view
       } catch (err: any) {
         alert(err.message || 'Error adjusting stock.')
       }
@@ -103,7 +127,6 @@ export default function AdjustStock() {
 
   const displayedProducts = useMemo(() => {
     return products.filter((p) => {
-      // 🚀 FIXED: If a main category is selected, we need to show products in it AND its sub-folders!
       const isInCategoryOrSub =
         selectedCatId === null
           ? true
@@ -118,8 +141,18 @@ export default function AdjustStock() {
     })
   }, [products, selectedCatId, searchQuery, categories])
 
+  // 🚀 NEW: Calculate Total Financial Loss for the selected product
+  const totalFinancialLoss = useMemo(() => {
+    return adjustmentHistory.reduce((sum, adj) => sum + adj.Quantity * adj.UnitCost, 0)
+  }, [adjustmentHistory])
+
+  const totalUnitsLost = useMemo(() => {
+    return adjustmentHistory.reduce((sum, adj) => sum + adj.Quantity, 0)
+  }, [adjustmentHistory])
+
   return (
     <div className={styles.container}>
+      {/* --- LEFT SIDEBAR --- */}
       <div className={styles.leftSidebar}>
         <div className={styles.searchHeader}>
           <input
@@ -152,47 +185,68 @@ export default function AdjustStock() {
             >
               <div>
                 <div className={styles.prodName}>{p.Name}</div>
-                <div className={styles.prodCode}>{p.Barcode}</div>
+                <div className={styles.prodCode}>{p.Barcode || 'N/A'}</div>
               </div>
               <div className={`${styles.stockBadge} ${p.Quantity <= 0 ? styles.empty : ''}`}>
                 {p.Quantity} {p.Unit}
               </div>
             </div>
           ))}
+          {displayedProducts.length === 0 && (
+            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              No products found.
+            </div>
+          )}
         </div>
       </div>
 
+      {/* --- MAIN WORKSPACE --- */}
       <div className={styles.mainArea}>
         {!selectedProduct ? (
-          <div
-            className={styles.panel}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              color: 'var(--text-muted)'
-            }}
-          >
+          <div className={styles.emptyPanel}>
             <h2>Select a product from the list to adjust stock.</h2>
           </div>
         ) : (
           <>
             <div className={styles.panel}>
               <div className={styles.productHeader}>
-                <h2 className={styles.productTitle}>
-                  {selectedProduct.Name}{' '}
-                  <span className={styles.productUnit}>
-                    | Total System Stock:{' '}
-                    <b>
-                      {selectedProduct.Quantity} {selectedProduct.Unit}
-                    </b>
-                  </span>
-                </h2>
+                <div>
+                  <h2 className={styles.productTitle}>{selectedProduct.Name}</h2>
+                  <div
+                    style={{
+                      fontSize: '13px',
+                      color: 'var(--text-muted)',
+                      marginTop: '4px',
+                      fontFamily: 'monospace'
+                    }}
+                  >
+                    CODE: {selectedProduct.Barcode || 'N/A'}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: 800,
+                      color: 'var(--text-muted)',
+                      textTransform: 'uppercase'
+                    }}
+                  >
+                    Total System Stock
+                  </div>
+                  <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--primary)' }}>
+                    {selectedProduct.Quantity}{' '}
+                    <span
+                      style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 'normal' }}
+                    >
+                      {selectedProduct.Unit}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <form onSubmit={handleAdjustStock} className={styles.formGrid}>
-                <div className={styles.formGroup}>
+                <div className={styles.formGroup} style={{ gridColumn: 'span 2' }}>
                   <label>1. Select Batch to Reduce</label>
                   <select
                     className={styles.classicInput}
@@ -203,31 +257,38 @@ export default function AdjustStock() {
                     <option value="">-- Choose specific batch --</option>
                     {activeBatches.map((b: any) => (
                       <option key={b.Id} value={b.Id}>
-                        Qty: {b.RemainingQuantity} | Rec:{' '}
-                        {new Date(b.ReceivedDate).toLocaleDateString()} | Cost: Rs {b.CostPrice}
+                        Current Qty: {b.RemainingQuantity} | Rec:{' '}
+                        {new Date(b.ReceivedDate).toLocaleDateString()} | Cost: Rs{' '}
+                        {b.CostPrice.toFixed(2)}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div className={styles.formGroup}>
-                  <label>2. Qty to Remove ({selectedProduct.Unit})</label>
-                  <input
-                    type="text"
-                    className={styles.classicInput}
-                    value={qtyToRemove}
-                    onChange={(e) => {
-                      // 🚀 Allow only numbers and one decimal point
-                      if (e.target.value === '' || /^\d*\.?\d*$/.test(e.target.value)) {
-                        setQtyToRemove(e.target.value)
-                      }
-                    }}
-                    required
-                  />
+                  <label>2. Qty to Remove</label>
+                  <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      className={styles.classicInput}
+                      value={qtyToRemove}
+                      onChange={(e) => {
+                        if (e.target.value === '' || /^\d*\.?\d*$/.test(e.target.value)) {
+                          setQtyToRemove(e.target.value)
+                        }
+                      }}
+                      required
+                      placeholder="0"
+                      style={{ width: '100%' }}
+                    />
+                    <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-muted)' }}>
+                      {selectedProduct.Unit}
+                    </span>
+                  </div>
                 </div>
 
                 <div className={styles.formGroup}>
-                  <label>3. Reason for Removal</label>
+                  <label>3. Reason</label>
                   <select
                     className={styles.classicInput}
                     value={reason}
@@ -238,58 +299,174 @@ export default function AdjustStock() {
                   </select>
                 </div>
 
+                <div className={styles.formGroup} style={{ gridColumn: 'span 3' }}>
+                  <label>
+                    4. Explanation Note{' '}
+                    {reason === '1' && <span style={{ color: 'var(--danger)' }}>(Required)</span>}
+                  </label>
+                  <input
+                    type="text"
+                    className={styles.classicInput}
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder={
+                      reason === '1'
+                        ? 'Explain exactly how this was lost or damaged...'
+                        : 'Optional note...'
+                    }
+                    required={reason === '1'}
+                  />
+                </div>
+
                 <button
                   type="submit"
                   className={styles.dangerBtn}
                   disabled={!selectedBatchId || activeBatches.length === 0}
                 >
-                  REMOVE STOCK
+                  ⚠️ REMOVE STOCK
                 </button>
               </form>
             </div>
 
-            <div className={styles.panel} style={{ flex: 1 }}>
-              <h3 className={styles.tableHeader}>Previous Adjustments</h3>
-              <table className={styles.classicTable}>
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Type</th>
-                    <th>Qty Removed</th>
-                    <th>Note / Details</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {adjustmentHistory.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={4}
-                        style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}
+            <div
+              className={styles.panel}
+              style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '15px'
+                }}
+              >
+                <h3 className={styles.tableHeader} style={{ margin: 0 }}>
+                  Adjustment & Loss History
+                </h3>
+
+                {/* 🚀 NEW: Financial Impact Summary */}
+                {adjustmentHistory.length > 0 && (
+                  <div style={{ display: 'flex', gap: '20px' }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <div
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          color: 'var(--text-muted)',
+                          textTransform: 'uppercase'
+                        }}
                       >
-                        No manual adjustments recorded for this product.
-                      </td>
+                        Total Units Lost
+                      </div>
+                      <div style={{ fontSize: '16px', fontWeight: 900, color: 'var(--text-main)' }}>
+                        {totalUnitsLost.toFixed(2)} {selectedProduct.Unit}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        textAlign: 'right',
+                        paddingLeft: '20px',
+                        borderLeft: '1px solid var(--border-color)'
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          color: 'var(--text-muted)',
+                          textTransform: 'uppercase'
+                        }}
+                      >
+                        Financial Loss
+                      </div>
+                      <div style={{ fontSize: '16px', fontWeight: 900, color: 'var(--danger)' }}>
+                        Rs {totalFinancialLoss.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div
+                style={{
+                  flex: 1,
+                  overflowY: 'auto',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px'
+                }}
+              >
+                <table className={styles.classicTable}>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th style={{ textAlign: 'center' }}>Qty Removed</th>
+                      <th style={{ textAlign: 'right' }}>Financial Value</th>
+                      <th>Note / Details</th>
                     </tr>
-                  ) : (
-                    adjustmentHistory.map((adj: any) => (
-                      <tr key={adj.Id}>
-                        <td>{new Date(adj.Date).toLocaleString()}</td>
+                  </thead>
+                  <tbody>
+                    {adjustmentHistory.length === 0 ? (
+                      <tr>
                         <td
+                          colSpan={5}
                           style={{
-                            fontWeight: 600,
-                            color: adj.Reason === 1 ? 'var(--danger)' : 'var(--warning)'
+                            textAlign: 'center',
+                            padding: '40px',
+                            color: 'var(--text-muted)',
+                            fontWeight: 600
                           }}
                         >
-                          {adj.Reason === 0 ? 'Correction' : 'Lost/Damaged'}
+                          No manual adjustments recorded for this product.
                         </td>
-                        <td style={{ fontWeight: 800 }}>
-                          - {adj.Quantity} {selectedProduct.Unit}
-                        </td>
-                        <td style={{ color: 'var(--text-muted)' }}>{adj.Note}</td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      adjustmentHistory.map((adj: any) => (
+                        <tr key={adj.Id}>
+                          <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
+                            {new Date(adj.Date).toLocaleString()}
+                          </td>
+                          <td>
+                            <span
+                              className={
+                                adj.Reason === 1 ? styles.badgeDanger : styles.badgeWarning
+                              }
+                            >
+                              {adj.Reason === 0 ? 'Correction' : 'Lost / Damaged'}
+                            </span>
+                          </td>
+                          <td
+                            style={{
+                              fontWeight: 900,
+                              color: 'var(--text-main)',
+                              textAlign: 'center'
+                            }}
+                          >
+                            - {adj.Quantity}{' '}
+                            <span
+                              style={{
+                                fontSize: '11px',
+                                color: 'var(--text-muted)',
+                                fontWeight: 'normal'
+                              }}
+                            >
+                              {selectedProduct.Unit}
+                            </span>
+                          </td>
+                          <td
+                            style={{ fontWeight: 800, color: 'var(--danger)', textAlign: 'right' }}
+                          >
+                            Rs {(adj.Quantity * adj.UnitCost).toFixed(2)}
+                          </td>
+                          <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
+                            {adj.Note}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </>
         )}

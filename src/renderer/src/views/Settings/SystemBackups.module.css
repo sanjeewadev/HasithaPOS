@@ -1,0 +1,187 @@
+/* src/renderer/src/views/Settings/SystemBackups.module.css */
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding-right: 5px;
+  overflow-y: auto;
+}
+
+.pageTitle {
+  margin: 0 0 20px 0;
+  color: var(--text-main);
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.dangerCard {
+  border: 1px solid #fecaca;
+  grid-column: 1 / -1; /* Make it span full width at the bottom */
+}
+
+.cardHeader {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-canvas);
+}
+.cardHeader h3 {
+  margin: 0 0 5px 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+.cardHeader p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.cardBody {
+  padding: 24px;
+}
+
+.classicSelect,
+.classicInput {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 600;
+  background: var(--bg-canvas);
+  outline: none;
+  transition: 0.2s;
+}
+.classicSelect:focus,
+.classicInput:focus {
+  border-color: var(--primary);
+  background: var(--bg-surface);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* BUTTONS */
+.primaryBtn {
+  width: 100%;
+  padding: 14px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.primaryBtn:hover {
+  filter: brightness(0.9);
+}
+
+.secondaryBtn {
+  padding: 12px 20px;
+  background: var(--bg-canvas);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.secondaryBtn:hover {
+  background: #e2e8f0;
+}
+
+.backupBtn {
+  flex: 1;
+  padding: 20px;
+  background: #ecfdf5;
+  color: #059669;
+  border: 2px dashed #34d399;
+  border-radius: 12px;
+  font-weight: 900;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.backupBtn:hover {
+  background: #dcfce7;
+  border-style: solid;
+}
+
+.restoreBtn {
+  flex: 1;
+  padding: 20px;
+  background: #fffbeb;
+  color: #d97706;
+  border: 2px dashed #fbbf24;
+  border-radius: 12px;
+  font-weight: 900;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.restoreBtn:hover {
+  background: #fef3c7;
+  border-style: solid;
+}
+
+.dangerBtnOutline {
+  width: 100%;
+  padding: 16px;
+  background: transparent;
+  color: var(--danger);
+  border: 2px solid var(--danger);
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.dangerBtnOutline:hover {
+  background: #fef2f2;
+}
+
+.dangerBtnSolid {
+  flex: 1;
+  padding: 12px;
+  background: var(--danger);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.dangerBtnSolid:disabled {
+  background: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.resetConfirmBox {
+  background: #fef2f2;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.resetConfirmBox label {
+  color: var(--danger);
+  font-size: 13px;
+}

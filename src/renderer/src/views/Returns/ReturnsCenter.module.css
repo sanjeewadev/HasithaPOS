@@ -2,7 +2,10 @@
 
 .container {
   height: 100%;
+  width: 100%; /* 🚀 NEW: Forces it to span the entire screen */
+  flex: 1; /* 🚀 NEW: Tells it to fill all available space */
   display: flex;
+  padding: 10px;
   flex-direction: column;
   gap: 10px;
   padding-bottom: 10px;

@@ -1,10 +1,11 @@
 // src/renderer/src/views/Reports/TodaySales.tsx
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import styles from './TodaySales.module.css'
 
 export default function TodaySales() {
   const [sales, setSales] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('') // 🚀 NEW: Search state
 
   // Modal for viewing receipt items
   const [viewingReceipt, setViewingReceipt] = useState<any | null>(null)
@@ -41,21 +42,20 @@ export default function TodaySales() {
   const handleVoid = async (receiptId: string) => {
     if (
       window.confirm(
-        `🚨 DANGER: Are you sure you want to VOID receipt ${receiptId}?\n\nThis will return all items to stock and cancel the sale permanently.`
+        `🚨 DANGER: Are you sure you want to VOID receipt ${receiptId}?\n\nThis will return all items to stock and cancel the sale permanently.\n(Do not void this if you have already processed partial returns for this receipt!)`
       )
     ) {
       try {
         // @ts-ignore
         await window.api.voidReceipt(receiptId)
         alert('✅ Receipt voided successfully.')
-        loadTodaySales() // Refresh the list
+        loadTodaySales() // Refresh the list to update financials
       } catch (err: any) {
         alert(err.message || 'Error voiding receipt.')
       }
     }
   }
 
-  // 🚀 Helper to render accurate Status Badges
   const renderStatusBadge = (status: number) => {
     switch (status) {
       case 0:
@@ -71,19 +71,78 @@ export default function TodaySales() {
     }
   }
 
-  // 🚀 Calculate Total Savings for the Modal
+  // 🚀 FIXED: Math Bug. Use UnitCost (which holds the original retail price from POS)
   const totalSavings = receiptItems.reduce((sum, item) => {
-    const original = item.OriginalPrice || item.UnitPrice
+    const original = item.UnitCost || item.UnitPrice
     return sum + Math.max(0, original - item.UnitPrice) * item.Quantity
   }, 0)
 
+  // 🚀 NEW: Search Filter Logic
+  const displayedSales = useMemo(() => {
+    const q = searchQuery.toLowerCase()
+    return sales.filter(
+      (s) =>
+        s.ReceiptId.toLowerCase().includes(q) ||
+        (s.CustomerName && s.CustomerName.toLowerCase().includes(q))
+    )
+  }, [sales, searchQuery])
+
+  // 🚀 NEW: Manager's Financial Summary
+  const { totalRevenue, cashSales, creditSales, voidCount } = useMemo(() => {
+    let rev = 0,
+      cash = 0,
+      credit = 0,
+      voids = 0
+    sales.forEach((s) => {
+      if (s.Status === 3) {
+        voids++
+      } else {
+        rev += s.TotalAmount
+        if (s.IsCredit) credit += s.TotalAmount
+        else cash += s.TotalAmount
+      }
+    })
+    return { totalRevenue: rev, cashSales: cash, creditSales: credit, voidCount: voids }
+  }, [sales])
+
   return (
     <div className={styles.container}>
+      {/* 🚀 NEW: Financial Dashboard Banner */}
+      <div className={styles.summaryBanner}>
+        <div className={styles.statBox}>
+          <div className={styles.statLabel}>Today's Net Revenue</div>
+          <div className={styles.statValueMain}>Rs {totalRevenue.toFixed(2)}</div>
+        </div>
+        <div className={styles.statDivider}></div>
+        <div className={styles.statBox}>
+          <div className={styles.statLabel}>Cash Sales</div>
+          <div className={styles.statValue}>Rs {cashSales.toFixed(2)}</div>
+        </div>
+        <div className={styles.statBox}>
+          <div className={styles.statLabel}>Credit Sales</div>
+          <div className={styles.statValueCredit}>Rs {creditSales.toFixed(2)}</div>
+        </div>
+        <div className={styles.statBox}>
+          <div className={styles.statLabel}>Voided Transactions</div>
+          <div className={styles.statValueDanger}>{voidCount} Receipts</div>
+        </div>
+      </div>
+
       <div className={styles.panel}>
         <div className={styles.headerRow}>
-          <h2 className={styles.panelTitle}>Today's Sales Ledger</h2>
-          <button className={styles.refreshBtn} onClick={loadTodaySales}>
-            🔄 Refresh
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <h2 className={styles.panelTitle}>Today's Sales Ledger</h2>
+            {/* 🚀 NEW: Instant Search Bar */}
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder="Find Receipt ID or Customer..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <button className={styles.refreshBtn} onClick={loadTodaySales} disabled={loading}>
+            {loading ? '⏳ Loading...' : '🔄 Refresh Ledger'}
           </button>
         </div>
 
@@ -101,14 +160,16 @@ export default function TodaySales() {
               </tr>
             </thead>
             <tbody>
-              {sales.length === 0 ? (
+              {displayedSales.length === 0 ? (
                 <tr>
                   <td colSpan={7} className={styles.emptyMsg}>
-                    No sales recorded yet today.
+                    {searchQuery
+                      ? 'No receipts match your search.'
+                      : 'No sales recorded yet today.'}
                   </td>
                 </tr>
               ) : (
-                sales.map((s) => (
+                displayedSales.map((s) => (
                   <tr key={s.ReceiptId} className={s.Status === 3 ? styles.voidedRow : ''}>
                     <td>
                       {new Date(s.TransactionDate).toLocaleTimeString([], {
@@ -150,7 +211,7 @@ export default function TodaySales() {
         </div>
       </div>
 
-      {/* --- 🚀 BIG PANEL: RECEIPT DETAILS MODAL --- */}
+      {/* --- RECEIPT DETAILS MODAL --- */}
       {viewingReceipt && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalBoxMassive}>
@@ -201,7 +262,7 @@ export default function TodaySales() {
                     </tr>
                   ) : (
                     receiptItems.map((item, idx) => {
-                      const original = item.OriginalPrice || item.UnitPrice
+                      const original = item.UnitCost || item.UnitPrice
                       const discountPerUnit = Math.max(0, original - item.UnitPrice)
                       const hasDiscount = discountPerUnit > 0
 
@@ -291,7 +352,6 @@ export default function TodaySales() {
                     <span>Rs {viewingReceipt.PaidAmount.toFixed(2)}</span>
                   </div>
 
-                  {/* Show Balance Due if it's a Credit Sale */}
                   {viewingReceipt.IsCredit === 1 &&
                     viewingReceipt.TotalAmount - viewingReceipt.PaidAmount > 0 && (
                       <div className={`${styles.summaryLine} ${styles.balanceLine}`}>

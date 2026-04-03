@@ -11,12 +11,15 @@ export default function CatalogManager() {
   const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null)
   const [expandedFolders, setExpandedFolders] = useState<Set<number>>(new Set())
 
+  // 🚀 NEW: Global Search
+  const [globalSearch, setGlobalSearch] = useState('')
+
   // State: Creation Modals
   const [modalView, setModalView] = useState<'CLOSED' | 'CHOICE' | 'FOLDER' | 'PRODUCT'>('CLOSED')
   const [newItemName, setNewItemName] = useState('')
   const [prodUnit, setProdUnit] = useState('Pcs')
 
-  // 🚀 NEW STATES: Viewing and Editing
+  // State: Viewing and Editing
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null)
   const [productBatches, setProductBatches] = useState<any[]>([])
 
@@ -50,8 +53,20 @@ export default function CatalogManager() {
     if (currentFolder) setSelectedFolderId(currentFolder.ParentId)
   }
 
+  // 🚀 SECURED: Folder Deletion
   const handleDeleteFolder = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this folder and all its contents?')) {
+    // 1. Check if folder has sub-folders
+    const hasSubFolders = categories.some((c) => c.ParentId === id)
+    // 2. Check if folder has products
+    const hasProducts = products.some((p) => p.CategoryId === id)
+
+    if (hasSubFolders || hasProducts) {
+      return alert(
+        '🛑 ACTION DENIED: This folder is not empty!\n\nYou must move or delete all products and sub-folders inside it before deleting. This protects your database history.'
+      )
+    }
+
+    if (window.confirm('Are you sure you want to delete this empty folder?')) {
       try {
         // @ts-ignore
         await window.api.deleteCategory(id)
@@ -63,8 +78,13 @@ export default function CatalogManager() {
     }
   }
 
+  // 🚀 SECURED: Product Deletion UI Warning
   const handleDeleteProduct = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
+    if (
+      window.confirm(
+        'Are you sure you want to remove this product from the catalog?\n\n(Note: Past sales history for this item will be safely preserved.)'
+      )
+    ) {
       try {
         // @ts-ignore
         await window.api.deleteProduct(id)
@@ -90,15 +110,27 @@ export default function CatalogManager() {
   // --- ACTIONS: CREATION ---
   const handleSaveFolder = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newItemName) return
+
+    const safeName = newItemName.trim()
+    if (!safeName) {
+      return alert('Folder name cannot be empty or just spaces.')
+    }
+
     try {
       // @ts-ignore
-      await window.api.addCategory({ Name: newItemName, ParentId: selectedFolderId })
+      await window.api.addCategory({ Name: safeName, ParentId: selectedFolderId })
       setModalView('CLOSED')
       setNewItemName('')
       loadData()
-    } catch (err) {
-      console.error(err)
+    } catch (err: any) {
+      // 🚀 FIXED: Human-readable duplicate errors
+      if (err.message && err.message.includes('UNIQUE constraint failed')) {
+        alert(
+          'A folder with this name already exists in your catalog. Please choose a different name.'
+        )
+      } else {
+        alert('Failed to create folder: ' + (err.message || 'Unknown error.'))
+      }
     }
   }
 
@@ -106,9 +138,14 @@ export default function CatalogManager() {
     e.preventDefault()
     if (!selectedFolderId) return alert('You must be inside a folder to create a product.')
 
+    const safeName = newItemName.trim()
+    if (!safeName) {
+      return alert('Product name cannot be empty or just spaces.')
+    }
+
     const generatedSKU = 'SKU-' + Math.floor(10000000 + Math.random() * 90000000)
     const payload = {
-      Name: newItemName,
+      Name: safeName,
       Barcode: generatedSKU,
       CategoryId: selectedFolderId,
       Unit: prodUnit,
@@ -126,8 +163,13 @@ export default function CatalogManager() {
       setNewItemName('')
       setProdUnit('Pcs')
       loadData()
-    } catch (err) {
-      console.error(err)
+    } catch (err: any) {
+      // 🚀 FIXED: Human-readable duplicate errors
+      if (err.message && err.message.includes('UNIQUE constraint failed')) {
+        alert('A product with this name already exists in your catalog.')
+      } else {
+        alert('Failed to create product: ' + (err.message || 'Unknown error.'))
+      }
     }
   }
 
@@ -139,14 +181,23 @@ export default function CatalogManager() {
 
   const handleUpdateFolder = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!editingFolder || !editFolderName) return
+    if (!editingFolder) return
+
+    const safeName = editFolderName.trim()
+    if (!safeName) return alert('Folder name cannot be empty.')
+
     try {
       // @ts-ignore
-      await window.api.updateCategory({ ...editingFolder, Name: editFolderName })
+      await window.api.updateCategory({ ...editingFolder, Name: safeName })
       setEditingFolder(null)
       loadData()
-    } catch (err) {
-      alert('Error updating folder.')
+    } catch (err: any) {
+      // 🚀 FIXED: Human-readable duplicate errors
+      if (err.message && err.message.includes('UNIQUE constraint failed')) {
+        alert('A folder with this name already exists. Please choose a different name.')
+      } else {
+        alert('Error updating folder: ' + err.message)
+      }
     }
   }
 
@@ -160,10 +211,14 @@ export default function CatalogManager() {
   const handleUpdateProduct = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editingProduct) return
+
+    const safeName = editProdName.trim()
+    if (!safeName) return alert('Product name cannot be empty.')
+
     try {
       const payload = {
         ...editingProduct,
-        Name: editProdName,
+        Name: safeName,
         Unit: editProdUnit,
         CategoryId: editProdFolder
       }
@@ -171,8 +226,13 @@ export default function CatalogManager() {
       await window.api.updateProduct(payload)
       setEditingProduct(null)
       loadData()
-    } catch (err) {
-      alert('Error updating product.')
+    } catch (err: any) {
+      // 🚀 FIXED: Human-readable duplicate errors
+      if (err.message && err.message.includes('UNIQUE constraint failed')) {
+        alert('A product with this name already exists in your catalog.')
+      } else {
+        alert('Error updating product: ' + err.message)
+      }
     }
   }
 
@@ -192,7 +252,10 @@ export default function CatalogManager() {
             <div
               className={`${styles.treeNode} ${isActive ? styles.active : ''}`}
               style={{ paddingLeft: `${depth * 15 + 10}px` }}
-              onClick={() => setSelectedFolderId(cat.Id)}
+              onClick={() => {
+                setSelectedFolderId(cat.Id)
+                setGlobalSearch('') // Clear search if they click a folder
+              }}
             >
               <span
                 className={styles.expandIcon}
@@ -219,18 +282,29 @@ export default function CatalogManager() {
     return renderTree(null)
   }, [categories, expandedFolders, selectedFolderId])
 
-  const displayedFolders = useMemo(
-    () => categories.filter((c) => c.ParentId === selectedFolderId),
-    [categories, selectedFolderId]
-  )
-  const displayedProducts = useMemo(
-    () => (selectedFolderId ? products.filter((p) => p.CategoryId === selectedFolderId) : []),
-    [products, selectedFolderId]
-  )
+  // Dynamic filtering based on Global Search or Selected Folder
+  const displayedFolders = useMemo(() => {
+    if (globalSearch) return [] // Hide folders when searching
+    return categories.filter((c) => c.ParentId === selectedFolderId)
+  }, [categories, selectedFolderId, globalSearch])
 
-  const currentFolderName = selectedFolderId
-    ? categories.find((c) => c.Id === selectedFolderId)?.Name
-    : 'Root Directory'
+  const displayedProducts = useMemo(() => {
+    if (globalSearch) {
+      const q = globalSearch.toLowerCase()
+      return products.filter(
+        (p) =>
+          p.Name.toLowerCase().includes(q) || (p.Barcode && p.Barcode.toLowerCase().includes(q))
+      )
+    }
+    return selectedFolderId ? products.filter((p) => p.CategoryId === selectedFolderId) : []
+  }, [products, selectedFolderId, globalSearch])
+
+  const currentFolderName = globalSearch
+    ? 'Search Results'
+    : selectedFolderId
+      ? categories.find((c) => c.Id === selectedFolderId)?.Name
+      : 'Root Directory'
+
   const getCatName = (id: number | null) => categories.find((c) => c.Id === id)?.Name || 'N/A'
 
   return (
@@ -244,8 +318,8 @@ export default function CatalogManager() {
       {/* LAYER 2: CONTENTS (RIGHT) */}
       <div className={styles.rightPanel}>
         <div className={styles.rightHeader}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            {selectedFolderId !== null && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            {!globalSearch && selectedFolderId !== null && (
               <button className={styles.backBtn} onClick={handleBack}>
                 <svg
                   width="16"
@@ -267,9 +341,26 @@ export default function CatalogManager() {
               <span>Path: </span> {currentFolderName}
             </div>
           </div>
-          <button className={styles.addBtn} onClick={() => setModalView('CHOICE')}>
-            <span style={{ fontSize: '18px' }}>+</span> ADD NEW
-          </button>
+
+          <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+            <input
+              type="text"
+              className={styles.globalSearch}
+              placeholder="Search entire catalog..."
+              value={globalSearch}
+              onChange={(e) => {
+                setGlobalSearch(e.target.value)
+                if (e.target.value) setSelectedFolderId(null)
+              }}
+            />
+            <button
+              className={styles.addBtn}
+              onClick={() => setModalView('CHOICE')}
+              disabled={!!globalSearch}
+            >
+              <span style={{ fontSize: '18px' }}>+</span> ADD NEW
+            </button>
+          </div>
         </div>
 
         <div className={styles.tableWrapper}>
@@ -319,6 +410,13 @@ export default function CatalogManager() {
                     <span className={styles.rowIcon}>📦</span> {prod.Name}
                   </td>
                   <td style={{ color: 'var(--text-muted)' }}>
+                    {globalSearch && (
+                      <span
+                        style={{ color: 'var(--primary)', fontWeight: 700, marginRight: '8px' }}
+                      >
+                        [{getCatName(prod.CategoryId)}]
+                      </span>
+                    )}
                     SKU: {prod.Barcode} | {prod.Unit}
                   </td>
                   <td>
@@ -350,7 +448,9 @@ export default function CatalogManager() {
                     colSpan={3}
                     style={{ textAlign: 'center', padding: '50px', color: 'var(--text-muted)' }}
                   >
-                    This folder is empty. Click '+ ADD NEW' to create something.
+                    {globalSearch
+                      ? 'No products match your search.'
+                      : "This folder is empty. Click '+ ADD NEW' to create something."}
                   </td>
                 </tr>
               )}
@@ -360,7 +460,7 @@ export default function CatalogManager() {
       </div>
 
       {/* ========================================================================= */}
-      {/* MODAL 1: CREATION MACHINE (Choice, Folder, Product) */}
+      {/* MODAL 1: CREATION MACHINE */}
       {/* ========================================================================= */}
       {modalView !== 'CLOSED' && (
         <div className={styles.modalOverlay}>
@@ -439,6 +539,7 @@ export default function CatalogManager() {
                       onChange={(e) => setNewItemName(e.target.value)}
                       required
                       placeholder="e.g. Hand Tools..."
+                      autoFocus
                     />
                   </div>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
@@ -474,6 +575,7 @@ export default function CatalogManager() {
                       onChange={(e) => setNewItemName(e.target.value)}
                       required
                       placeholder="e.g. Stanley Hammer 12oz"
+                      autoFocus
                     />
                   </div>
                   <div className={styles.formGroup}>
@@ -527,6 +629,7 @@ export default function CatalogManager() {
                     value={editFolderName}
                     onChange={(e) => setEditFolderName(e.target.value)}
                     required
+                    autoFocus
                   />
                 </div>
               </div>
@@ -571,6 +674,7 @@ export default function CatalogManager() {
                     value={editProdName}
                     onChange={(e) => setEditProdName(e.target.value)}
                     required
+                    autoFocus
                   />
                 </div>
                 <div className={styles.formGroup}>
@@ -616,7 +720,7 @@ export default function CatalogManager() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 4: THE BIG VIEW MODAL (Exact match from Product Catalog) */}
+      {/* MODAL 4: THE BIG VIEW MODAL */}
       {/* ========================================================================= */}
       {viewingProduct !== null && (
         <div className={styles.modalOverlay}>
@@ -709,7 +813,6 @@ export default function CatalogManager() {
                       </tr>
                     ) : (
                       productBatches.map((batch, idx) => {
-                        // 🚀 FIXED: Treat DB value as Rupee Amount, calculate Percentage dynamically!
                         const maxDiscountValue = batch.Discount || 0
                         const minAllowedPrice = batch.SellingPrice - maxDiscountValue
                         const rawPercent =

@@ -1,5 +1,5 @@
 // src/main/index.ts
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -12,6 +12,7 @@ import * as supRepo from './repositories/supplierRepo'
 import * as prodRepo from './repositories/productRepo'
 import * as stockRepo from './repositories/stockRepo'
 import * as reportRepo from './repositories/reportRepo'
+import * as systemRepo from './repositories/systemRepo' // 🚀 ADDED THIS
 
 // 1. SINGLE INSTANCE LOCK (Replaces your C# Mutex)
 const gotTheLock = app.requestSingleInstanceLock()
@@ -110,6 +111,11 @@ app.whenReady().then(() => {
   ipcMain.handle('get-chart-data', (_, filter) => reportRepo.getChartData(filter))
   ipcMain.handle('get-top-sellers', () => reportRepo.getTopSellers(5))
   ipcMain.handle('get-dashboard-low-stock', () => reportRepo.getLowStockAlerts(5))
+  // Add this to your main.ts or wherever you register IPC handlers
+  ipcMain.handle('get-dashboard-data', async (_, startDate, endDate) => {
+    // 🚀 FIXED: Added reportRepo. before the function call!
+    return reportRepo.getDashboardDataFromDB(startDate, endDate)
+  })
 
   // Sales Ledger Queries
   ipcMain.handle('get-today-sales', () => reportRepo.getTodaySales())
@@ -130,6 +136,54 @@ app.whenReady().then(() => {
   ipcMain.handle('process-complete-sale', (_, transaction, movements) =>
     stockRepo.processCompleteSale(transaction, movements)
   )
+
+  // ==========================================
+  // ⚙️ SYSTEM, HARDWARE & BACKUPS
+  // ==========================================
+  ipcMain.handle('get-printers', async (event) => {
+    return await event.sender.getPrintersAsync()
+  })
+
+  ipcMain.handle('export-database', async (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender)
+    const { canceled, filePath } = await dialog.showSaveDialog(window!, {
+      title: 'Save Database Backup',
+      defaultPath: `JHHardware_Backup_${new Date().toISOString().split('T')[0]}.sqlite`,
+      filters: [{ name: 'SQLite Database', extensions: ['sqlite', 'db'] }]
+    })
+
+    if (canceled || !filePath) return { success: false, canceled: true }
+    return await systemRepo.exportDatabase(filePath)
+  })
+
+  ipcMain.handle('import-database', async (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender)
+    const { canceled, filePaths } = await dialog.showOpenDialog(window!, {
+      title: 'Select Database Backup to Restore',
+      properties: ['openFile'],
+      filters: [{ name: 'SQLite Database', extensions: ['sqlite', 'db'] }]
+    })
+
+    if (canceled || filePaths.length === 0) return { success: false, canceled: true }
+
+    const result = await systemRepo.importDatabase(filePaths[0])
+    if (result.success) {
+      // 🚀 Safely restart the app to load the new database!
+      app.relaunch()
+      app.quit()
+    }
+    return result
+  })
+
+  ipcMain.handle('factory-reset', () => {
+    const result = systemRepo.factoryReset()
+    if (result.success) {
+      // 🚀 Safely restart the app with a clean slate!
+      app.relaunch()
+      app.quit()
+    }
+    return result
+  })
 
   // --- END LISTENERS ---
 

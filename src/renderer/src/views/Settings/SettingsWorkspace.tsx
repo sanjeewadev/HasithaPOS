@@ -3,6 +3,7 @@ import { useState } from 'react'
 import styles from '../../styles/SharedSidebar.module.css' // Using shared CSS!
 import { useAuth } from '../../store/AuthContext'
 import UserManager from './UserManager'
+import SystemBackups from './SystemBackups'
 
 export default function SettingsWorkspace() {
   const { currentUser } = useAuth()
@@ -13,14 +14,7 @@ export default function SettingsWorkspace() {
       case 'Users':
         return <UserManager />
       case 'System':
-        return (
-          <div className={styles.modernCard}>
-            <h2 style={{ marginTop: 0, color: 'var(--text-main)' }}>System Preferences</h2>
-            <p style={{ color: 'var(--text-muted)' }}>
-              Printer configs, Cloud Sync, and Local Backups will go here...
-            </p>
-          </div>
-        )
+        return <SystemBackups /> // 🚀 Replace the old placeholder with the real component!
       default:
         return null
     }

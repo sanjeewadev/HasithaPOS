@@ -265,3 +265,91 @@ export function getAuditLogs(startDate: string, endDate: string) {
     )
     .all(startDate, endDate)
 }
+
+export function getDashboardDataFromDB(startDate: string, endDate: string) {
+  const db = getDb() // Use your database connection instance
+
+  // 🚀 FIX: Append 23:59:59 so it includes sales made at the end of the day!
+  const endDateTime = endDate + ' 23:59:59'
+
+  // 1. Gross Sales (For the selected period)
+  const salesResult = db
+    .prepare(
+      `
+    SELECT SUM(TotalAmount) as total 
+    FROM SalesTransactions 
+    WHERE Status != 3 AND TransactionDate BETWEEN ? AND ?
+  `
+    )
+    .get(startDate, endDateTime) as any
+
+  // 2. Net Profit (For the selected period)
+  // Calculates: (Sold Price - Bought Price) * Quantity for all valid receipts
+  const profitResult = db
+    .prepare(
+      `
+    SELECT SUM((UnitPrice - UnitCost) * Quantity) as total
+    FROM StockMovements
+    WHERE ReceiptId IN (
+      SELECT ReceiptId FROM SalesTransactions 
+      WHERE Status != 3 AND TransactionDate BETWEEN ? AND ?
+    )
+  `
+    )
+    .get(startDate, endDateTime) as any
+
+  // 3. Pending Credit (ALL TIME - because debt doesn't disappear if you change the date filter!)
+  const creditResult = db
+    .prepare(
+      `
+    SELECT SUM(TotalAmount - PaidAmount) as total 
+    FROM SalesTransactions 
+    WHERE IsCredit = 1 AND Status IN (1, 2) AND Status != 3
+  `
+    )
+    .get() as any
+
+  // 4. Chart Data (Grouped by Day for the selected period)
+  const chartRows = db
+    .prepare(
+      `
+    SELECT 
+      DATE(TransactionDate) as dateLabel,
+      SUM(TotalAmount) as sales
+    FROM SalesTransactions
+    WHERE Status != 3 AND TransactionDate BETWEEN ? AND ?
+    GROUP BY DATE(TransactionDate)
+    ORDER BY DATE(TransactionDate) ASC
+  `
+    )
+    .all(startDate, endDateTime) as any[]
+
+  // We loop through the chart rows to calculate the profit per day
+  const profitStmt = db.prepare(`
+    SELECT SUM((UnitPrice - UnitCost) * Quantity) as dailyProfit
+    FROM StockMovements
+    WHERE ReceiptId IN (
+      SELECT ReceiptId FROM SalesTransactions 
+      WHERE Status != 3 AND DATE(TransactionDate) = ?
+    )
+  `)
+
+  const finalChartData = chartRows.map((row) => {
+    const dailyProfitRow = profitStmt.get(row.dateLabel) as any
+    return {
+      dateLabel: row.dateLabel,
+      sales: row.sales || 0,
+      profit: dailyProfitRow.dailyProfit || 0
+    }
+  })
+
+  // Return the perfectly formatted package back to the React frontend!
+  return {
+    metrics: {
+      grossSales: salesResult.total || 0,
+      netProfit: profitResult.total || 0,
+      pendingCredit: creditResult.total || 0
+    },
+    chartData: finalChartData
+  }
+}

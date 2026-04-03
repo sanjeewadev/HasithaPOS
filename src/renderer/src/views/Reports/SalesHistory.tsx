@@ -10,7 +10,7 @@ export default function SalesHistory() {
   const [searchQuery, setSearchQuery] = useState('')
   const [startDate, setStartDate] = useState(() => {
     const d = new Date()
-    d.setDate(1)
+    d.setDate(1) // Set to the 1st of the current month
     return d.toISOString().split('T')[0]
   })
   const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0])
@@ -24,6 +24,7 @@ export default function SalesHistory() {
     setLoading(true)
     try {
       // @ts-ignore
+      // IMPORTANT: Ensure your backend adds ' 23:59:59' to the endDate to capture the full last day!
       const data = await window.api.getSalesHistory(startDate, endDate, searchQuery.trim())
       setSales(data || [])
     } catch (err) {
@@ -35,7 +36,7 @@ export default function SalesHistory() {
 
   useEffect(() => {
     loadSalesHistory()
-  }, [])
+  }, [startDate, endDate]) // 🚀 NEW: Auto-reload when dates change!
 
   const handleViewItems = async (txn: any) => {
     setViewingReceipt(txn)
@@ -74,9 +75,9 @@ export default function SalesHistory() {
     return { validSales, voidedSales }
   }, [sales])
 
-  // 🚀 Calculate Total Savings for the Modal
+  // 🚀 FIXED MATH BUG: Uses UnitCost (which stores Original Price)
   const totalSavings = receiptItems.reduce((sum, item) => {
-    const original = item.OriginalPrice || item.UnitPrice
+    const original = item.UnitCost || item.UnitPrice
     return sum + Math.max(0, original - item.UnitPrice) * item.Quantity
   }, 0)
 
@@ -111,8 +112,18 @@ export default function SalesHistory() {
             className={styles.searchInput}
             placeholder="Optional: Search by Receipt ID or Customer Name..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value)
+              // Automatically trigger a search if they clear the box
+              if (e.target.value === '') {
+                setTimeout(() => {
+                  document.getElementById('searchFormBtn')?.click()
+                }, 100)
+              }
+            }}
           />
+          {/* Hidden button to allow auto-triggering search when input clears */}
+          <button id="searchFormBtn" type="submit" style={{ display: 'none' }}></button>
         </form>
 
         <div className={styles.summaryGroup}>
@@ -156,7 +167,17 @@ export default function SalesHistory() {
               ) : (
                 sales.map((s) => (
                   <tr key={s.ReceiptId} className={s.Status === 3 ? styles.voidedRow : ''}>
-                    <td>{new Date(s.TransactionDate).toLocaleString()}</td>
+                    <td>
+                      <div style={{ fontWeight: 800, color: 'var(--text-main)' }}>
+                        {new Date(s.TransactionDate).toLocaleDateString()}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                        {new Date(s.TransactionDate).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                    </td>
                     <td
                       style={{ fontWeight: 800, fontFamily: 'monospace', color: 'var(--primary)' }}
                     >
@@ -174,7 +195,6 @@ export default function SalesHistory() {
                       <button className={styles.viewBtn} onClick={() => handleViewItems(s)}>
                         VIEW DETAILS
                       </button>
-                      {/* NO VOID BUTTON HERE! Strictly for Returns Center now. */}
                     </td>
                   </tr>
                 ))
@@ -235,7 +255,8 @@ export default function SalesHistory() {
                     </tr>
                   ) : (
                     receiptItems.map((item, idx) => {
-                      const original = item.OriginalPrice || item.UnitPrice
+                      // 🚀 FIXED: Using UnitCost for original retail price
+                      const original = item.UnitCost || item.UnitPrice
                       const discountPerUnit = Math.max(0, original - item.UnitPrice)
                       const hasDiscount = discountPerUnit > 0
 

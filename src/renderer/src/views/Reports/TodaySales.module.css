@@ -30,6 +30,77 @@
   text-transform: uppercase;
 }
 
+/* ADD THIS TO THE TOP OF TodaySales.module.css */
+
+.summaryBanner {
+  display: flex;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+  align-items: center;
+  gap: 30px;
+}
+.statBox {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.statDivider {
+  width: 2px;
+  height: 40px;
+  background: var(--border-color);
+  margin: 0 10px;
+}
+.statLabel {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.statValueMain {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--success);
+}
+.statValue {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+.statValueCredit {
+  font-size: 22px;
+  font-weight: 800;
+  color: #d97706; /* Amber for credit */
+}
+.statValueDanger {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--danger);
+}
+
+.searchInput {
+  padding: 10px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--bg-canvas);
+  color: var(--text-main);
+  width: 300px;
+  outline: none;
+  transition: 0.2s;
+  font-family: inherit;
+}
+.searchInput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  background: var(--bg-surface);
+}
+
+/* Ensure the rest of your CSS remains unchanged below this! */
+
 .refreshBtn {
   padding: 8px 16px;
   background: var(--bg-canvas);

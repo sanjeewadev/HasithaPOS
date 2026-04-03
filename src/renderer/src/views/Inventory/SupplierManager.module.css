@@ -43,9 +43,12 @@
   color: var(--text-main);
   width: 280px;
   transition: all var(--transition-speed);
+  outline: none;
 }
 .searchInput:focus {
   background: var(--bg-surface);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .tableWrapper {
@@ -61,7 +64,7 @@
   font-size: 14px;
 }
 .classicTable th {
-  background: var(--bg-sidebar); /* Dark premium header like your screenshot */
+  background: var(--bg-sidebar);
   color: var(--sidebar-text-hover);
   padding: 14px 16px;
   text-align: left;
@@ -84,17 +87,30 @@
 .actionBtn {
   background: transparent;
   border: none;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
   margin-right: 15px;
   font-size: 12px;
+  transition: 0.2s;
+}
+.btnInfo {
+  color: var(--primary);
+}
+.btnInfo:hover {
+  filter: brightness(0.8);
 }
 .btnEdit {
   color: var(--warning);
 }
+.btnEdit:hover {
+  filter: brightness(0.8);
+}
 .btnDel {
   color: var(--danger);
   margin-right: 0;
+}
+.btnDel:hover {
+  filter: brightness(0.8);
 }
 
 /* --- RIGHT PANEL: FORM --- */
@@ -135,7 +151,7 @@
 .formGroup label {
   display: block;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-muted);
   margin-bottom: 8px;
   text-transform: uppercase;
@@ -149,6 +165,7 @@
   font-family: inherit;
   font-size: 14px;
   transition: all var(--transition-speed);
+  outline: none;
 }
 .formGroup input:focus,
 .formGroup textarea:focus {
@@ -164,7 +181,12 @@
   border-radius: var(--border-radius-sm);
   cursor: pointer;
   font-weight: 700;
+  transition: 0.2s;
 }
+.clearBtn:hover {
+  background: #64748b;
+}
+
 .saveBtn {
   padding: 12px 20px;
   background: var(--success);
@@ -172,19 +194,13 @@
   border: none;
   border-radius: var(--border-radius-sm);
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 800;
   flex: 1;
+  transition: 0.2s;
 }
 .saveBtn:hover {
   filter: brightness(0.9);
-}
-
-/* --- NEW ACTION BUTTONS --- */
-.btnInfo {
-  color: var(--primary);
-}
-.btnBills {
-  color: var(--success);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* --- MODALS (Pop-ups) --- */
@@ -211,12 +227,10 @@
   overflow: hidden;
 }
 
-/* 🚀 The NEW Massive Profile Modal */
 .modalBoxMassive {
   width: 1000px;
+  max-width: 95vw;
 }
-
-/* 🚀 The NEW Large Bill Details Modal */
 .modalBoxLarge {
   width: 800px;
 }

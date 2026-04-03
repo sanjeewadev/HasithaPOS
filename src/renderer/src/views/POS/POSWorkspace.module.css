@@ -716,3 +716,49 @@ input[type='number'] {
   background: var(--text-muted);
   cursor: not-allowed;
 }
+
+/* 🚀 NEW: FLEXIBLE PRICING WARNING STYLES */
+.warningTextCompact {
+  color: #d97706;
+  font-size: 11px;
+  font-weight: 900;
+  margin-bottom: 0;
+}
+
+.dangerTextCompact {
+  color: var(--danger);
+  font-size: 11px;
+  font-weight: 900;
+  animation: pulse 1s infinite;
+  margin-bottom: 0;
+}
+
+.priceInputBox.warning {
+  border-color: #f59e0b;
+  background: #fffbeb;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+}
+.priceInputBox.warning .pricePrefix {
+  background: #fef3c7;
+  color: #d97706;
+  border-color: #f59e0b;
+}
+.priceInputBox.warning .priceInput {
+  color: #d97706;
+}
+
+/* Cart Item Warnings */
+.cartItemDanger {
+  border-color: #fecaca;
+  background: #fff1f2;
+}
+.discDanger {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+.discWarning {
+  background: #fffbeb;
+  color: #d97706;
+  border-color: #fde68a;
+}

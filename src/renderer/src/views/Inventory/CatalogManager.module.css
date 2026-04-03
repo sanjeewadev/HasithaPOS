@@ -98,6 +98,26 @@
   font-weight: normal;
 }
 
+/* ADD THIS TO CatalogManager.module.css */
+
+.globalSearch {
+  width: 250px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+  background: var(--bg-canvas);
+  color: var(--text-main);
+  transition: 0.2s;
+  outline: none;
+}
+
+.globalSearch:focus {
+  border-color: var(--primary);
+  background: var(--bg-surface);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
 .addBtn {
   background: var(--primary);
   color: var(--bg-surface);
@@ -315,7 +335,6 @@
 .modalBoxView {
   background: var(--bg-surface);
   border-radius: var(--border-radius-lg);
-  width: 1000px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;

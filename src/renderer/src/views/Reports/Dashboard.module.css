@@ -2,10 +2,84 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   height: 100%;
   overflow: hidden;
   padding-right: 5px;
+}
+
+/* --- TOP CONTROL HEADER --- */
+.controlHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-surface);
+  padding: 16px 24px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.pageTitle {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.dateFilters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.dateInput {
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  background: var(--bg-canvas);
+  color: var(--text-main);
+  outline: none;
+  transition: 0.2s;
+}
+.dateInput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.refreshBtn {
+  padding: 10px 20px;
+  background: #0f172a;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.refreshBtn:hover {
+  background: #1e293b;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+}
+.refreshBtn:disabled {
+  background: var(--text-muted);
+  cursor: wait;
+  box-shadow: none;
 }
 
 /* --- KPI CARDS --- */
@@ -54,9 +128,10 @@
   text-transform: uppercase;
 }
 .kpiValue {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 900;
   color: var(--text-main);
+  letter-spacing: -0.5px;
 }
 .kpiCard.primary .kpiValue {
   color: #3b82f6;
@@ -68,24 +143,7 @@
   color: #f59e0b;
 }
 
-/* --- SHARED CARD STYLES --- */
-.cardHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--bg-canvas);
-  padding-bottom: 15px;
-  margin-bottom: 15px;
-}
-.cardTitle {
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--text-main);
-  text-transform: uppercase;
-}
-
 /* --- CHART CARD --- */
-/* Notice flex: 1; -> This makes the chart stretch to fill the rest of the screen! */
 .chartCard {
   background: #ffffff;
   border: 1px solid var(--border-color);
@@ -96,21 +154,35 @@
   display: flex;
   flex-direction: column;
 }
-.chartSelect {
-  padding: 8px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background: var(--bg-canvas);
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid var(--bg-canvas);
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+}
+.cardTitle {
+  font-size: 16px;
+  font-weight: 800;
   color: var(--text-main);
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-  outline: none;
+  text-transform: uppercase;
 }
-.chartSelect:focus {
-  border-color: #3b82f6;
-}
+
 .chartWrapper {
   flex: 1;
-  min-height: 0; /* Important for recharts to size correctly inside flex */
+  min-height: 0;
+}
+
+.emptyChart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 16px;
+  background: var(--bg-canvas);
+  border-radius: 8px;
+  border: 2px dashed var(--border-color);
 }

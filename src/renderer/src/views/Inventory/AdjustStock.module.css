@@ -1,4 +1,5 @@
 /* src/renderer/src/views/Inventory/AdjustStock.module.css */
+
 .container {
   display: flex;
   gap: 8px;
@@ -19,9 +20,12 @@
 }
 
 .searchHeader {
-  padding: 8px;
+  padding: 15px;
   border-bottom: 1px solid var(--border-color);
   background: var(--bg-canvas);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .searchInput {
@@ -31,16 +35,24 @@
   border-radius: var(--border-radius-sm);
   font-size: 13px;
   background: var(--bg-surface);
-  margin-bottom: 10px;
+  outline: none;
+  transition: 0.2s;
+}
+.searchInput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
 }
 
 .categorySelect {
   width: 100%;
-  padding: 8px 12px;
+  padding: 10px 12px;
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-sm);
   font-size: 13px;
   background: var(--bg-surface);
+  font-weight: 600;
+  color: var(--text-main);
+  outline: none;
 }
 
 .productList {
@@ -63,15 +75,15 @@
 
 .productCard:hover {
   border-color: var(--primary);
-  background: var(--bg-hover);
+  background: rgba(37, 99, 235, 0.05);
 }
 .productCard.active {
   border-color: var(--primary);
-  background: rgba(37, 99, 235, 0.05);
+  background: rgba(37, 99, 235, 0.1);
 }
 
 .prodName {
-  font-weight: 700;
+  font-weight: 800;
   font-size: 14px;
   color: var(--text-main);
   margin-bottom: 4px;
@@ -80,18 +92,22 @@
   font-size: 11px;
   color: var(--text-muted);
   font-family: monospace;
+  font-weight: 600;
 }
+
 .stockBadge {
   font-size: 12px;
   font-weight: 800;
   padding: 4px 8px;
-  border-radius: 20px;
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--success);
+  border-radius: 6px;
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
 }
 .stockBadge.empty {
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--danger);
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
 }
 
 /* --- MAIN WORKSPACE (Right) --- */
@@ -102,6 +118,21 @@
   gap: 10px;
   overflow-y: auto;
   padding-right: 10px;
+}
+
+.emptyPanel {
+  background: var(--bg-surface);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--border-radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+}
+.emptyPanel h2 {
+  font-weight: 700;
+  font-size: 20px;
 }
 
 .panel {
@@ -116,7 +147,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 2px solid var(--bg-canvas);
   padding-bottom: 15px;
   margin-bottom: 20px;
 }
@@ -125,17 +156,13 @@
   margin: 0;
   font-size: 24px;
   color: var(--text-main);
-}
-.productUnit {
-  font-size: 14px;
-  color: var(--text-muted);
-  font-weight: normal;
+  font-weight: 900;
 }
 
 /* --- ADJUSTMENT FORM --- */
 .formGrid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1.5fr 1fr;
+  grid-template-columns: 2fr 1fr 1.5fr auto;
   gap: 15px;
   align-items: end;
 }
@@ -147,61 +174,101 @@
 }
 .formGroup label {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-muted);
   text-transform: uppercase;
 }
 .classicInput {
-  padding: 10px 12px;
+  padding: 12px;
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-sm);
   font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  transition: 0.2s;
+  outline: none;
+}
+.classicInput:focus {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
 }
 
 .dangerBtn {
   background: var(--danger);
   color: white;
   border: none;
-  padding: 10px 20px;
+  padding: 12px 24px;
   border-radius: var(--border-radius-sm);
-  font-weight: 700;
-  font-size: 11px;
+  font-weight: 800;
+  font-size: 13px;
   cursor: pointer;
-  height: 40px;
+  height: 44px;
   transition: all 0.2s;
 }
 .dangerBtn:hover {
   filter: brightness(0.9);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 .dangerBtn:disabled {
   background: var(--border-color);
   cursor: not-allowed;
+  box-shadow: none;
   color: var(--text-muted);
 }
 
 /* --- HISTORY TABLE --- */
 .tableHeader {
-  margin: 0 0 15px 0;
-  font-size: 16px;
+  margin: 0;
+  font-size: 18px;
   color: var(--text-main);
-  font-weight: 700;
+  font-weight: 800;
+  text-transform: uppercase;
 }
+
 .classicTable {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 14px;
 }
 .classicTable th {
-  background: var(--bg-canvas);
+  background: #f8fafc;
   color: var(--text-muted);
-  padding: 12px;
+  padding: 12px 16px;
   text-align: left;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
   font-size: 11px;
+  position: sticky;
+  top: 0;
+  border-bottom: 1px solid var(--border-color);
 }
 .classicTable td {
-  padding: 12px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--border-color);
   color: var(--text-main);
+}
+.classicTable tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+/* Badges */
+.badgeDanger {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  border: 1px solid #fee2e2;
+}
+.badgeWarning {
+  background: #fffbeb;
+  color: #d97706;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  border: 1px solid #fef3c7;
 }

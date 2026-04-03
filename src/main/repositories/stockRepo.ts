@@ -8,47 +8,44 @@ export function processGRN(payload: any) {
   const db = getDb()
 
   const grnTxn = db.transaction((data) => {
-    const { SupplierId, ReferenceNo, Items } = data
+    // 🚀 NEW: We now extract the InvoiceDate sent from the frontend!
+    const { SupplierId, ReferenceNo, InvoiceDate, Items } = data
 
-    // Calculate invoice total
     let totalAmount = 0
     for (const item of Items) {
       totalAmount += item.total
     }
 
-    // 1. Create Purchase Invoice
+    // 1. Create Purchase Invoice (🚀 Added Date)
     const insertInvoice = db
       .prepare(
         `
-      INSERT INTO PurchaseInvoices (BillNumber, SupplierId, TotalAmount, Status) 
-      VALUES (?, ?, ?, 1)
+      INSERT INTO PurchaseInvoices (BillNumber, SupplierId, TotalAmount, Status, Date) 
+      VALUES (?, ?, ?, 1, ?)
     `
       )
-      .run(ReferenceNo, SupplierId, totalAmount)
+      .run(ReferenceNo, SupplierId, totalAmount, InvoiceDate)
 
     const invoiceId = insertInvoice.lastInsertRowid
 
-    // 2. Prepare statements for high-speed looping
+    // 2. Prepare statements (🚀 Added ReceivedDate & Date)
     const insertBatchStmt = db.prepare(`
-      INSERT INTO StockBatches (ProductId, InitialQuantity, RemainingQuantity, CostPrice, SellingPrice, Discount, DiscountCode, PurchaseInvoiceId) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO StockBatches (ProductId, InitialQuantity, RemainingQuantity, CostPrice, SellingPrice, Discount, DiscountCode, PurchaseInvoiceId, ReceivedDate) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
 
     const insertMovementStmt = db.prepare(`
-      INSERT INTO StockMovements (ProductId, Type, Quantity, UnitCost, UnitPrice, StockBatchId, ReceiptId) 
-      VALUES (?, 1, ?, ?, ?, ?, ?)
+      INSERT INTO StockMovements (ProductId, Type, Quantity, UnitCost, UnitPrice, StockBatchId, ReceiptId, Date) 
+      VALUES (?, 1, ?, ?, ?, ?, ?, ?)
     `)
 
     const updateProductStmt = db.prepare(`
       UPDATE Products 
-      SET Quantity = Quantity + ?, 
-          BuyingPrice = ?, 
-          SellingPrice = ?, 
-          DiscountLimit = ? 
+      SET Quantity = Quantity + ?, BuyingPrice = ?, SellingPrice = ?, DiscountLimit = ? 
       WHERE Id = ?
     `)
 
-    // 3. Process every item in the GRN cart
+    // 3. Process every item
     for (const item of Items) {
       const rnd = Math.floor(Math.random() * 9)
       const discountCode = `${rnd}${String(item.discountLimit).padStart(3, '0')}${rnd}`
@@ -61,7 +58,8 @@ export function processGRN(payload: any) {
         item.sellPrice,
         item.discountLimit,
         discountCode,
-        invoiceId
+        invoiceId,
+        InvoiceDate // 🚀 Custom Date
       )
       const batchId = batchResult.lastInsertRowid
 
@@ -71,7 +69,8 @@ export function processGRN(payload: any) {
         item.buyPrice,
         item.sellPrice,
         batchId,
-        ReferenceNo
+        ReferenceNo,
+        InvoiceDate // 🚀 Custom Date
       )
 
       updateProductStmt.run(

@@ -10,7 +10,11 @@ interface Props {
 export default function TopNavigationBar({ currentMode, setMode }: Props) {
   const { currentUser, logout } = useAuth()
 
-  const tabs = ['POS', 'Inventory', 'Reports', 'Settings']
+  // 🚀 RBAC LOGIC: Admins see everything. Staff cannot see Settings.
+  const tabs = ['POS', 'Returns', 'Inventory', 'Reports']
+  if (currentUser?.Role === 1) {
+    tabs.push('Settings')
+  }
 
   // Native warning before logging out
   const handleLogout = () => {
@@ -43,13 +47,12 @@ export default function TopNavigationBar({ currentMode, setMode }: Props) {
       <div className={`${styles.userInfo} ${styles.noDrag}`}>
         <div>
           {currentUser?.FullName}{' '}
-          <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>
-            ({currentUser?.Role === 0 ? 'Admin' : 'Staff'})
+          <span style={{ color: 'var(--text-muted)', fontWeight: 800 }}>
+            ({currentUser?.Role === 1 ? 'Admin' : 'Staff'})
           </span>
         </div>
 
         <button className={styles.logoutBtn} onClick={handleLogout}>
-          {/* A modern Log Out SVG Icon */}
           <svg
             width="18"
             height="18"
