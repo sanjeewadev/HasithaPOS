@@ -1,5 +1,6 @@
 // src/renderer/src/views/Reports/TodaySales.tsx
 import React, { useState, useEffect, useMemo } from 'react'
+import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
 import styles from './TodaySales.module.css'
 
 export default function TodaySales() {
@@ -17,8 +18,9 @@ export default function TodaySales() {
       // @ts-ignore
       const data = await window.api.getTodaySales()
       setSales(data || [])
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load sales', err)
+      Swal.fire('Error', 'Failed to load sales: ' + err.message, 'error')
     } finally {
       setLoading(false)
     }
@@ -34,24 +36,32 @@ export default function TodaySales() {
       // @ts-ignore
       const items = await window.api.getReceiptItems(txn.ReceiptId)
       setReceiptItems(items || [])
-    } catch (err) {
+    } catch (err: any) {
+      Swal.fire('Error', 'Failed to load receipt details: ' + err.message, 'error')
       setReceiptItems([])
     }
   }
 
   const handleVoid = async (receiptId: string) => {
-    if (
-      window.confirm(
-        `🚨 DANGER: Are you sure you want to VOID receipt ${receiptId}?\n\nThis will return all items to stock and cancel the sale permanently.\n(Do not void this if you have already processed partial returns for this receipt!)`
-      )
-    ) {
+    // 🚀 REPLACED window.confirm
+    const confirmResult = await Swal.fire({
+      title: '🚨 DANGER: VOID RECEIPT',
+      text: `Are you sure you want to VOID receipt ${receiptId}?\n\nThis will return all items to stock and cancel the sale permanently.\n(Do not void this if you have already processed partial returns for this receipt!)`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, VOID IT!'
+    })
+
+    if (confirmResult.isConfirmed) {
       try {
         // @ts-ignore
         await window.api.voidReceipt(receiptId)
-        alert('✅ Receipt voided successfully.')
+        Swal.fire('Success', '✅ Receipt voided successfully.', 'success')
         loadTodaySales() // Refresh the list to update financials
       } catch (err: any) {
-        alert(err.message || 'Error voiding receipt.')
+        Swal.fire('Error', err.message || 'Error voiding receipt.', 'error')
       }
     }
   }

@@ -1,5 +1,6 @@
 // src/renderer/src/views/Settings/UserManager.tsx
 import React, { useState, useEffect } from 'react'
+import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
 import { User } from '../../types/models'
 import { useAuth } from '../../store/AuthContext'
 import styles from './UserManager.module.css'
@@ -80,11 +81,13 @@ export default function UserManager() {
     const safeUsername = username.trim().toLowerCase()
 
     if (!safeFullName || !safeUsername) {
-      return alert('Name and Username are required!')
+      // 🚀 REPLACED alert
+      return Swal.fire('Missing Information', 'Name and Username are required!', 'warning')
     }
 
     if (!editingId && !password) {
-      return alert('A password is required for new users!')
+      // 🚀 REPLACED alert
+      return Swal.fire('Missing Information', 'A password is required for new users!', 'warning')
     }
 
     let finalHash = existingHash
@@ -109,40 +112,67 @@ export default function UserManager() {
       if (editingId) {
         // @ts-ignore
         await window.api.updateUser(payload)
-        alert('User updated successfully.')
+        // 🚀 REPLACED alert
+        Swal.fire('Success', 'User updated successfully.', 'success')
       } else {
         const isDuplicate = users.some((u) => u.Username.toLowerCase() === safeUsername)
-        if (isDuplicate) return alert(`Username '${safeUsername}' is already taken.`)
+        if (isDuplicate) {
+          // 🚀 REPLACED alert
+          return Swal.fire(
+            'Duplicate Username',
+            `Username '${safeUsername}' is already taken.`,
+            'error'
+          )
+        }
 
         // @ts-ignore
         await window.api.addUser(payload)
-        alert('User created successfully.')
+        // 🚀 REPLACED alert
+        Swal.fire('Success', 'User created successfully.', 'success')
       }
       handleClear()
       loadUsers()
     } catch (err: any) {
-      alert(`Error saving user: ${err.message}`)
+      // 🚀 REPLACED alert
+      Swal.fire('Error', `Error saving user: ${err.message}`, 'error')
     }
   }
 
   const handleToggleBlock = async (u: User, currentStatus: boolean) => {
     if (u.Role === 0 || u.Id === currentUser?.Id) {
-      return alert('Security: You cannot block yourself or the Master Root account.')
+      // 🚀 REPLACED alert
+      return Swal.fire(
+        'Security Warning',
+        'You cannot block yourself or the Master Root account.',
+        'error'
+      )
     }
 
-    if (
-      window.confirm(
-        `Are you sure you want to ${currentStatus ? 'BLOCK' : 'UNBLOCK'} ${u.Username}?`
-      )
-    ) {
+    // 🚀 REPLACED window.confirm
+    const confirmResult = await Swal.fire({
+      title: `${currentStatus ? 'BLOCK' : 'UNBLOCK'} USER?`,
+      text: `Are you sure you want to ${currentStatus ? 'block' : 'unblock'} ${u.Username}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: currentStatus ? '#d33' : '#28a745',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: `Yes, ${currentStatus ? 'Block' : 'Unblock'}`
+    })
+
+    if (confirmResult.isConfirmed) {
       try {
         const payload = { ...u, IsActive: !currentStatus }
         // @ts-ignore
         await window.api.updateUser(payload)
         loadUsers()
         if (editingId === u.Id) handleClear()
+        Swal.fire(
+          'Success',
+          `User ${currentStatus ? 'blocked' : 'unblocked'} successfully.`,
+          'success'
+        )
       } catch (err: any) {
-        alert(`Error updating status: ${err.message}`)
+        Swal.fire('Error', `Error updating status: ${err.message}`, 'error')
       }
     }
   }

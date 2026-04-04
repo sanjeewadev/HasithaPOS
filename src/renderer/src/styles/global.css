@@ -101,3 +101,18 @@ textarea:focus {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* 🚀 THE ELECTRON DRAG SHIELD FIX */
+input,
+button,
+textarea,
+select,
+a,
+form {
+  -webkit-app-region: no-drag !important;
+}
+
+/* If the whole login background is draggable, ensure the card itself blocks the drag */
+#root > div {
+  -webkit-app-region: no-drag;
+}

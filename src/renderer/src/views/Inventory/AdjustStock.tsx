@@ -1,5 +1,6 @@
 // src/renderer/src/views/Inventory/AdjustStock.tsx
 import React, { useState, useEffect, useMemo } from 'react'
+import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
 import { Product, Category } from '../../types/models'
 import styles from './AdjustStock.module.css'
 
@@ -51,7 +52,6 @@ export default function AdjustStock() {
     try {
       // @ts-ignore
       const batches = await window.api.getProductBatches(prod.Id)
-      // 🚀 Sort so newest/active batches are at the top
       const sortedBatches = batches
         .filter((b: any) => b.RemainingQuantity > 0)
         .sort(
@@ -71,24 +71,30 @@ export default function AdjustStock() {
 
   const handleAdjustStock = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedProduct || !selectedBatchId) return alert('Select a product and a batch.')
+    if (!selectedProduct || !selectedBatchId) {
+      return Swal.fire('Missing Info', 'Select a product and a batch.', 'warning')
+    }
 
     const qty = parseFloat(qtyToRemove)
-    if (isNaN(qty) || qty <= 0) return alert('Enter a valid quantity greater than 0.')
+    if (isNaN(qty) || qty <= 0) {
+      return Swal.fire('Invalid Quantity', 'Enter a valid quantity greater than 0.', 'error')
+    }
 
-    // 🚀 SECURITY FIX 1: Enforce whole numbers for physical items
     const wholeUnits = ['Pcs', 'Box', 'Set']
     if (wholeUnits.includes(selectedProduct.Unit) && qty % 1 !== 0) {
-      return alert(
-        `You cannot remove partial quantities (${qty}) for items measured in ${selectedProduct.Unit}. Must be a whole number.`
+      return Swal.fire(
+        'Invalid Quantity',
+        `You cannot remove partial quantities (${qty}) for items measured in ${selectedProduct.Unit}. Must be a whole number.`,
+        'error'
       )
     }
 
-    // 🚀 SECURITY FIX 2: Enforce audit notes for lost items
     const safeNote = note.trim()
     if (reason === '1' && safeNote.length < 5) {
-      return alert(
-        'SECURITY REQUIREMENT: You must provide a clear reason/note (at least 5 characters) explaining why this item is being marked as Lost or Damaged.'
+      return Swal.fire(
+        'Security Requirement',
+        'You must provide a clear reason/note (at least 5 characters) explaining why this item is being marked as Lost or Damaged.',
+        'warning'
       )
     }
 
@@ -96,14 +102,25 @@ export default function AdjustStock() {
     if (!batch) return
 
     if (qty > batch.RemainingQuantity) {
-      return alert(`Cannot remove ${qty}. Only ${batch.RemainingQuantity} left in this batch.`)
+      return Swal.fire(
+        'Insufficient Stock',
+        `Cannot remove ${qty}. Only ${batch.RemainingQuantity} left in this batch.`,
+        'error'
+      )
     }
 
-    if (
-      window.confirm(
-        `🚨 WARNING: You are about to permanently remove ${qty} ${selectedProduct.Unit} of ${selectedProduct.Name} from the system.\n\nFinancial Loss: Rs ${(qty * batch.CostPrice).toFixed(2)}\n\nProceed?`
-      )
-    ) {
+    // 🚀 REPLACED window.confirm
+    const confirmResult = await Swal.fire({
+      title: '🚨 WARNING: Permanent Action',
+      text: `You are about to permanently remove ${qty} ${selectedProduct.Unit} of ${selectedProduct.Name} from the system.\n\nFinancial Loss: Rs ${(qty * batch.CostPrice).toFixed(2)}`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, remove stock!'
+    })
+
+    if (confirmResult.isConfirmed) {
       try {
         const payload = {
           ProductId: selectedProduct.Id,
@@ -115,12 +132,14 @@ export default function AdjustStock() {
 
         // @ts-ignore
         await window.api.adjustStock(payload)
-        alert('✅ Stock removed successfully. Financial records updated.')
+
+        // 🚀 REPLACED alert
+        Swal.fire('Success!', 'Stock removed successfully. Financial records updated.', 'success')
 
         loadBaseData()
         handleSelectProduct(selectedProduct) // Refresh the exact product view
       } catch (err: any) {
-        alert(err.message || 'Error adjusting stock.')
+        Swal.fire('Error', err.message || 'Error adjusting stock.', 'error')
       }
     }
   }
@@ -141,7 +160,6 @@ export default function AdjustStock() {
     })
   }, [products, selectedCatId, searchQuery, categories])
 
-  // 🚀 NEW: Calculate Total Financial Loss for the selected product
   const totalFinancialLoss = useMemo(() => {
     return adjustmentHistory.reduce((sum, adj) => sum + adj.Quantity * adj.UnitCost, 0)
   }, [adjustmentHistory])
@@ -344,7 +362,6 @@ export default function AdjustStock() {
                   Adjustment & Loss History
                 </h3>
 
-                {/* 🚀 NEW: Financial Impact Summary */}
                 {adjustmentHistory.length > 0 && (
                   <div style={{ display: 'flex', gap: '20px' }}>
                     <div style={{ textAlign: 'right' }}>

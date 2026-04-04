@@ -1,5 +1,6 @@
 // src/renderer/src/views/Settings/SystemBackups.tsx
 import React, { useState, useEffect } from 'react'
+import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
 import styles from './SystemBackups.module.css'
 
 export default function SystemBackups() {
@@ -30,7 +31,8 @@ export default function SystemBackups() {
 
   const handleSavePrinter = () => {
     localStorage.setItem('pos_printer_name', selectedPrinter)
-    alert(`✅ Printer configuration saved: ${selectedPrinter}`)
+    // 🚀 REPLACED alert
+    Swal.fire('Success', `✅ Printer configuration saved: ${selectedPrinter}`, 'success')
   }
 
   const handleBackup = async () => {
@@ -39,21 +41,30 @@ export default function SystemBackups() {
       // @ts-ignore
       const result = await window.api.exportDatabase()
       if (result && result.success) {
-        alert('✅ Database backup saved successfully!')
+        // 🚀 REPLACED alert
+        Swal.fire('Backup Saved', '✅ Database backup saved successfully!', 'success')
       }
     } catch (err: any) {
-      alert(`❌ Backup failed: ${err.message}`)
+      // 🚀 REPLACED alert
+      Swal.fire('Backup Failed', `❌ ${err.message}`, 'error')
     } finally {
       setIsProcessing(false)
     }
   }
 
   const handleRestore = async () => {
-    if (
-      !window.confirm(
-        '🚨 WARNING: Restoring a backup will permanently overwrite ALL current data in the system. The application will restart automatically.\n\nAre you sure you want to proceed?'
-      )
-    ) {
+    // 🚀 REPLACED window.confirm
+    const confirmResult = await Swal.fire({
+      title: '🚨 CRITICAL WARNING',
+      text: 'Restoring a backup will permanently overwrite ALL current data in the system. The application will restart automatically.\n\nAre you sure you want to proceed?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, OVERWRITE my data!'
+    })
+
+    if (!confirmResult.isConfirmed) {
       return
     }
 
@@ -62,11 +73,13 @@ export default function SystemBackups() {
       // @ts-ignore
       const result = await window.api.importDatabase()
       if (result && !result.success && !result.canceled) {
-        alert('❌ Restore failed. Check logs.')
+        // 🚀 REPLACED alert
+        Swal.fire('Restore Failed', '❌ Restore failed. Check logs.', 'error')
       }
       // Note: If successful, the app restarts so this won't even execute!
     } catch (err: any) {
-      alert(`❌ Restore failed: ${err.message}`)
+      // 🚀 REPLACED alert
+      Swal.fire('Restore Failed', `❌ ${err.message}`, 'error')
     } finally {
       setIsProcessing(false)
     }
@@ -74,7 +87,12 @@ export default function SystemBackups() {
 
   const handleFactoryReset = async () => {
     if (resetText !== 'DELETE ALL DATA') {
-      return alert('You must type EXACTLY "DELETE ALL DATA" to proceed.')
+      // 🚀 REPLACED alert
+      return Swal.fire(
+        'Action Denied',
+        'You must type EXACTLY "DELETE ALL DATA" to proceed.',
+        'error'
+      )
     }
 
     setIsProcessing(true)
@@ -83,7 +101,8 @@ export default function SystemBackups() {
       await window.api.factoryReset()
       // App will automatically restart here
     } catch (err: any) {
-      alert(`❌ Factory Reset failed: ${err.message}`)
+      // 🚀 REPLACED alert
+      Swal.fire('Factory Reset Failed', `❌ ${err.message}`, 'error')
       setIsProcessing(false)
     }
   }

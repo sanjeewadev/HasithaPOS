@@ -1,5 +1,6 @@
 // src/renderer/src/views/Inventory/ProductCatalog.tsx
 import React, { useState, useEffect, useMemo } from 'react'
+import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
 import { Category, Product } from '../../types/models'
 import styles from './ProductCatalog.module.css'
 
@@ -24,8 +25,8 @@ export default function ProductCatalog() {
       const prodData = await window.api.getProducts()
       setCategories(catData)
       setProducts(prodData)
-    } catch (err) {
-      console.error('Failed to load data', err)
+    } catch (err: any) {
+      Swal.fire('Error', 'Failed to load catalog data: ' + err.message, 'error')
     }
   }
 
@@ -49,8 +50,8 @@ export default function ProductCatalog() {
         )
 
       setProductBatches(activeBatches)
-    } catch (err) {
-      console.error(err)
+    } catch (err: any) {
+      Swal.fire('Error', 'Failed to load product batches: ' + err.message, 'error')
       setProductBatches([])
     }
   }
@@ -217,7 +218,6 @@ export default function ProductCatalog() {
                       </span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      {/* 🚀 FIXED: Only the View button remains. No Delete button! */}
                       <button className={styles.viewBtn} onClick={() => handleViewProduct(product)}>
                         VIEW BATCHES
                       </button>

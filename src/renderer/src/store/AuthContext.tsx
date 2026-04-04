@@ -1,8 +1,8 @@
 // src/renderer/src/store/AuthContext.tsx
-import React, { createContext, useContext, useState } from 'react' // <- Removed unused useEffect
+import React, { createContext, useContext, useState } from 'react'
 import { User } from '../types/models'
 
-// SHA-256 Hashing converted to Base64 (Matches your C# Convert.ToBase64String EXACTLY)
+// SHA-256 Hashing converted to Base64
 async function hashPassword(password: string): Promise<string> {
   if (!password) return ''
   const msgBuffer = new TextEncoder().encode(password)
@@ -24,18 +24,28 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
 
+  // 🚀 THE GHOST FOCUS KILLER
+  const releaseGhostFocus = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
+    // 🗑️ REMOVED THE IPC SIGNAL TO PREVENT WINDOWS FROM LOCKING THE KEYBOARD
+  }
+
   const login = async (username: string, pass: string) => {
     try {
+      // 🚀 Drop the keyboard focus immediately before we start checking credentials
+      releaseGhostFocus()
+
       const cleanUsername = username.trim()
       const cleanPass = pass.trim()
 
       // --- 1. PERMANENT SUPER ADMIN (The "Root" Account) ---
-      // Translated exactly from your C# AuthenticationService.cs
       if (cleanUsername === 'Super_admin-jh' && cleanPass === 'kj%gs6s%s8*7t') {
         setCurrentUser({
           Id: -1,
           Username: 'master_admin',
-          PasswordHash: 'ROOT_NO_HASH', // <--- ADD THIS LINE RIGHT HERE!
+          PasswordHash: 'ROOT_NO_HASH',
           FullName: 'SYSTEM ROOT',
           Role: 0, // UserRole.SuperAdmin
           IsActive: true,
@@ -43,7 +53,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         })
         return { success: true }
       }
-      // -----------------------------------------------------
 
       // 2. Get user from SQLite
       // @ts-ignore
@@ -52,7 +61,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!user) return { success: false, error: '❌ Invalid username or password.' }
 
       // 3. Security: Check if Account is Blocked
-      // FIX: Using !user.IsActive satisfies TypeScript's strict boolean checking!
       if (!user.IsActive) {
         return { success: false, error: '⛔ Your account has been disabled.' }
       }
@@ -71,6 +79,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const logout = () => {
+    // 🚀 Drop the keyboard focus right before destroying the POS screen
+    releaseGhostFocus()
     setCurrentUser(null)
   }
 

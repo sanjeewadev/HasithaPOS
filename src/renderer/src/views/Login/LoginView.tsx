@@ -60,8 +60,7 @@ export default function LoginView() {
                 setUsername(e.target.value)
                 setError('')
               }}
-              disabled={isBusy}
-              autoFocus
+              readOnly={isBusy} /* 🚀 THE FIX: Use readOnly instead of disabled */
               placeholder="Enter your username"
             />
           </div>
@@ -76,7 +75,7 @@ export default function LoginView() {
                 setPassword(e.target.value)
                 setError('')
               }}
-              disabled={isBusy}
+              readOnly={isBusy} /* 🚀 THE FIX: Use readOnly instead of disabled */
               placeholder="••••••••"
             />
           </div>
@@ -91,7 +90,11 @@ export default function LoginView() {
           </div>
 
           {/* Submit Button */}
-          <button type="submit" disabled={isBusy} className={styles.submitBtn}>
+          <button
+            type="submit"
+            className={styles.submitBtn}
+            style={{ opacity: isBusy ? 0.7 : 1, cursor: isBusy ? 'not-allowed' : 'pointer' }}
+          >
             {isBusy ? 'AUTHENTICATING...' : 'SECURE LOGIN'}
           </button>
         </form>

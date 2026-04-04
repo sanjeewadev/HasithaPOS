@@ -1,7 +1,7 @@
 // src/renderer/src/views/Reports/ReportsWorkspace.tsx
 import { useState, useEffect } from 'react'
 import styles from '../../styles/SharedSidebar.module.css'
-import { useAuth } from '../../store/AuthContext' // 🚀 NEW: Import Auth
+import { useAuth } from '../../store/AuthContext'
 
 import Dashboard from './Dashboard'
 import InventoryAlerts from './InventoryAlerts'
@@ -12,7 +12,9 @@ import AuditLogs from './AuditLogs'
 
 export default function ReportsWorkspace() {
   const { currentUser } = useAuth()
-  const isAdmin = currentUser?.Role === 1
+
+  // 🚀 RBAC: Recognize both Root and Admin
+  const isAdmin = currentUser?.Role === 0 || currentUser?.Role === 1
 
   // Staff defaults to Alerts, Admin defaults to Dashboard
   const [activeTab, setActiveTab] = useState(isAdmin ? 'Dashboard' : 'Alerts')
@@ -34,7 +36,7 @@ export default function ReportsWorkspace() {
         return <SalesHistory />
       case 'Credit':
         return <CreditAccounts />
-      // 🚀 RBAC: Only render if Admin
+      // 🚀 RBAC: Only render if Admin/Root
       case 'Dashboard':
         return isAdmin ? <Dashboard /> : null
       case 'Audit':

@@ -1,5 +1,6 @@
 // src/renderer/src/views/Inventory/StockInManager.tsx
 import React, { useState, useEffect, useMemo, useRef } from 'react'
+import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
 import { Product, Supplier } from '../../types/models'
 import styles from './StockInManager.module.css'
 
@@ -80,11 +81,19 @@ export default function StockInManager() {
     localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftState))
   }, [selectedSupplier, invoiceNo, invoiceDate, grnItems])
 
-  // Clear Draft Function
-  const handleClearDraft = () => {
-    if (
-      window.confirm('Are you sure you want to clear this draft? All scanned items will be lost.')
-    ) {
+  // Clear Draft Function - 🚀 REPLACED window.confirm
+  const handleClearDraft = async () => {
+    const result = await Swal.fire({
+      title: 'Clear Draft?',
+      text: 'Are you sure you want to clear this draft? All scanned items will be lost.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, clear it!'
+    })
+
+    if (result.isConfirmed) {
       setSelectedSupplier('')
       setInvoiceNo('')
       setInvoiceDate(new Date().toISOString().split('T')[0])
@@ -125,7 +134,12 @@ export default function StockInManager() {
 
   const handleAddItem = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedProductId) return alert('Select a product first!')
+
+    // 🚀 REPLACED alert
+    if (!selectedProductId) {
+      Swal.fire('Missing Product', 'Select a product first!', 'warning')
+      return
+    }
 
     const prod = products.find((p) => p.Id === selectedProductId)
     const qtyNum = parseFloat(inputQty) || 0
@@ -136,8 +150,10 @@ export default function StockInManager() {
     if (discPercentNum < 0) discPercentNum = 0
     if (discPercentNum > 100) discPercentNum = 100
 
+    // 🚀 REPLACED alert
     if (!prod || qtyNum <= 0 || buyNum <= 0 || sellNum <= 0) {
-      return alert('Please enter valid quantities and prices.')
+      Swal.fire('Invalid Input', 'Please enter valid quantities and prices.', 'error')
+      return
     }
 
     const calculatedDiscountRs = parseFloat(((sellNum * discPercentNum) / 100).toFixed(2))
@@ -170,11 +186,24 @@ export default function StockInManager() {
   }
 
   const handleProcessGRN = async () => {
+    // 🚀 REPLACED alert
     if (!selectedSupplier || grnItems.length === 0 || !invoiceNo) {
-      return alert('Please complete the Header details and add items.')
+      Swal.fire('Missing Details', 'Please complete the Header details and add items.', 'warning')
+      return
     }
 
-    if (window.confirm(`Process GRN for Rs ${totalGRNValue.toFixed(2)}?`)) {
+    // 🚀 REPLACED window.confirm
+    const confirmResult = await Swal.fire({
+      title: 'Process GRN?',
+      text: `Process GRN for Rs ${totalGRNValue.toFixed(2)}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#28a745',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, process it!'
+    })
+
+    if (confirmResult.isConfirmed) {
       try {
         const payload = {
           SupplierId: parseInt(selectedSupplier),
@@ -191,7 +220,8 @@ export default function StockInManager() {
         // @ts-ignore
         await window.api.processGRN(payload)
 
-        alert('✅ GRN Processed Successfully!')
+        // 🚀 REPLACED alert
+        Swal.fire('Success!', '✅ GRN Processed Successfully!', 'success')
 
         // Wipe local storage completely
         localStorage.removeItem(DRAFT_STORAGE_KEY)
@@ -199,8 +229,9 @@ export default function StockInManager() {
         setSelectedSupplier('')
         setInvoiceNo('')
         setInvoiceDate(new Date().toISOString().split('T')[0])
-      } catch (err) {
-        alert('Error processing GRN.')
+      } catch (err: any) {
+        // 🚀 REPLACED alert
+        Swal.fire('Error', err.message || 'Error processing GRN.', 'error')
       }
     }
   }

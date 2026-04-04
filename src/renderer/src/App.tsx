@@ -1,5 +1,5 @@
 // src/renderer/src/App.tsx
-import { useState } from 'react'
+import { useState } from 'react' // 🚀 Removed useEffect as it is no longer needed
 import { useAuth } from './store/AuthContext'
 
 // --- Shell & Layout ---
@@ -14,13 +14,11 @@ import ReportsWorkspace from './views/Reports/ReportsWorkspace'
 import SettingsWorkspace from './views/Settings/SettingsWorkspace'
 
 function App() {
+  // 1. ALL HOOKS MUST BE AT THE TOP
   const { currentUser } = useAuth()
   const [currentMode, setCurrentMode] = useState('POS')
 
-  if (!currentUser) {
-    return <LoginView />
-  }
-
+  // 2. HELPER FUNCTIONS
   const renderWorkspace = () => {
     switch (currentMode) {
       case 'POS':
@@ -32,23 +30,30 @@ function App() {
       case 'Reports':
         return <ReportsWorkspace />
       case 'Settings':
-        // 🚀 RBAC LOGIC: Hard stop for staff trying to access Settings
-        if (currentUser.Role !== 1)
+        if (currentUser?.Role !== 0 && currentUser?.Role !== 1) {
           return (
             <div style={{ padding: '50px', textAlign: 'center', fontWeight: 'bold', color: 'red' }}>
               ACCESS DENIED
             </div>
           )
+        }
         return <SettingsWorkspace />
       default:
         return <POSWorkspace />
     }
   }
 
+  // 3. ONE SINGLE RETURN STATEMENT AT THE BOTTOM
   return (
-    <AppLayout currentMode={currentMode} setMode={setCurrentMode}>
-      {renderWorkspace()}
-    </AppLayout>
+    <>
+      {!currentUser ? (
+        <LoginView />
+      ) : (
+        <AppLayout currentMode={currentMode} setMode={setCurrentMode}>
+          {renderWorkspace()}
+        </AppLayout>
+      )}
+    </>
   )
 }
 

@@ -1,5 +1,6 @@
 // src/renderer/src/views/Reports/CreditAccounts.tsx
 import React, { useState, useEffect, useMemo } from 'react'
+import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
 import styles from './CreditAccounts.module.css'
 
 export default function CreditAccounts() {
@@ -40,31 +41,42 @@ export default function CreditAccounts() {
 
     // 🚀 SECURITY FIX: Safe Floating Point Math
     const amount = parseFloat(paymentAmount)
-    if (isNaN(amount) || amount <= 0) return alert('Enter a valid payment amount greater than 0.')
+    if (isNaN(amount) || amount <= 0) {
+      return Swal.fire('Invalid Amount', 'Enter a valid payment amount greater than 0.', 'warning')
+    }
 
     const safeAmount = parseFloat(amount.toFixed(2))
     const safePending = parseFloat(selectedInvoice.TotalPending.toFixed(2))
 
     if (safeAmount > safePending) {
-      return alert(
-        `Payment (Rs ${safeAmount.toFixed(2)}) cannot exceed the total pending debt of Rs ${safePending.toFixed(2)}`
+      return Swal.fire(
+        'Invalid Amount',
+        `Payment (Rs ${safeAmount.toFixed(2)}) cannot exceed the total pending debt of Rs ${safePending.toFixed(2)}`,
+        'error'
       )
     }
 
-    if (
-      window.confirm(
-        `Process payment of Rs ${safeAmount.toFixed(2)} for Invoice ${selectedInvoice.ReceiptId}?`
-      )
-    ) {
+    // 🚀 REPLACED window.confirm
+    const confirmResult = await Swal.fire({
+      title: 'Process Payment?',
+      text: `Process payment of Rs ${safeAmount.toFixed(2)} for Invoice ${selectedInvoice.ReceiptId}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#28a745',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, process it!'
+    })
+
+    if (confirmResult.isConfirmed) {
       setIsProcessing(true)
       try {
         // @ts-ignore
         await window.api.processCreditPayment(selectedInvoice.ReceiptId, safeAmount)
-        alert('✅ Payment successfully applied to invoice!')
+        Swal.fire('Success!', '✅ Payment successfully applied to invoice!', 'success')
         setSelectedInvoice(null)
         loadInvoices()
       } catch (err: any) {
-        alert('Error processing payment: ' + err.message)
+        Swal.fire('Error', 'Error processing payment: ' + err.message, 'error')
       } finally {
         setIsProcessing(false)
       }

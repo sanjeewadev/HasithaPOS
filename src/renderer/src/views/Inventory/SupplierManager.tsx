@@ -1,5 +1,6 @@
 // src/renderer/src/views/Inventory/SupplierManager.tsx
 import React, { useState, useEffect, useMemo } from 'react'
+import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
 import { Supplier } from '../../types/models'
 import styles from './SupplierManager.module.css'
 
@@ -51,44 +52,66 @@ export default function SupplierManager() {
     const safeName = name.trim()
     const safePhone = phone.trim()
 
-    if (!safeName) return alert('Company name is required!')
+    if (!safeName) {
+      return Swal.fire('Error', 'Company name is required!', 'error')
+    }
 
     try {
       if (editingSupplierId) {
         // @ts-ignore
         await window.api.updateSupplier({ Id: editingSupplierId, Name: safeName, Phone: safePhone })
-        alert('✅ Supplier updated successfully!')
+        Swal.fire('Success', '✅ Supplier updated successfully!', 'success')
       } else {
         // @ts-ignore
         await window.api.addSupplier({ Name: safeName, Phone: safePhone })
-        alert('✅ New supplier added successfully!')
+        Swal.fire('Success', '✅ New supplier added successfully!', 'success')
       }
       handleClear()
       loadData()
     } catch (err: any) {
       if (err.message && err.message.includes('UNIQUE constraint failed')) {
-        alert('🛑 A supplier with this company name already exists in your database.')
+        Swal.fire(
+          'Duplicate',
+          '🛑 A supplier with this company name already exists in your database.',
+          'warning'
+        )
       } else {
-        alert('Error saving supplier: ' + (err.message || 'Unknown error'))
+        Swal.fire('Error', 'Error saving supplier: ' + (err.message || 'Unknown error'), 'error')
       }
     }
   }
 
   // 🚀 SECURED: Catch Foreign Key restrictions gracefully
   const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this supplier?')) {
+    const confirmResult = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'Do you want to delete this supplier?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!'
+    })
+
+    if (confirmResult.isConfirmed) {
       try {
         // @ts-ignore
         await window.api.deleteSupplier(id)
         loadData()
-        alert('✅ Supplier deleted successfully.')
+        Swal.fire('Deleted!', '✅ Supplier deleted successfully.', 'success')
       } catch (err: any) {
         if (err.message && err.message.includes('FOREIGN KEY constraint failed')) {
-          alert(
-            '🛑 ACTION DENIED: This supplier has invoice history!\n\nYou cannot delete a supplier who has provided stock. This protects your financial records. You can edit their name instead.'
+          Swal.fire(
+            'Action Denied',
+            '🛑 ACTION DENIED: This supplier has invoice history!\n\nYou cannot delete a supplier who has provided stock. This protects your financial records. You can edit their name instead.',
+            'error'
           )
         } else {
-          alert('Error deleting supplier: ' + (err.message || 'Unknown error'))
+          Swal.fire(
+            'Error',
+            'Error deleting supplier: ' + (err.message || 'Unknown error'),
+            'error'
+          )
         }
       }
     }

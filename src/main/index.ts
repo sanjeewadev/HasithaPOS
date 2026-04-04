@@ -14,6 +14,11 @@ import * as stockRepo from './repositories/stockRepo'
 import * as reportRepo from './repositories/reportRepo'
 import * as systemRepo from './repositories/systemRepo' // 🚀 ADDED THIS
 
+// 🚀 THE FIX: Disable GPU Hardware Acceleration to prevent UI freezing
+app.disableHardwareAcceleration()
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows', 'true')
+app.commandLine.appendSwitch('disable-renderer-backgrounding', 'true')
+
 // 1. SINGLE INSTANCE LOCK (Replaces your C# Mutex)
 const gotTheLock = app.requestSingleInstanceLock()
 if (!gotTheLock) {
@@ -27,17 +32,37 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     titleBarStyle: 'hidden',
-    frame: false,
+    frame: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      spellcheck: false // 🚀 ADD THIS LINE TO DISABLE THE NATIVE SPELLCHECKER
     }
   })
 
-  mainWindow.on('ready-to-show', () => {
+  // 🚀 AGGRESSIVELY GRAB OS KEYBOARD FOCUS ON STARTUP
+  mainWindow.once('ready-to-show', () => {
     mainWindow.maximize()
     mainWindow.show()
+
+    // Force Windows to give this window absolute priority
+    mainWindow.setAlwaysOnTop(true)
+    mainWindow.focus()
+    mainWindow.focusOnWebView() // Physically route the keyboard to React
+    mainWindow.setAlwaysOnTop(false)
+  })
+
+  // 🚀 ELECTRON INPUT FREEZE PATCH
+  mainWindow.on('focus', () => {
+    mainWindow.webContents.send('window-focused')
+  })
+
+  // Force the window to top level briefly to reset the Windows input layer
+  mainWindow.on('show', () => {
+    mainWindow.focus()
+    mainWindow.setAlwaysOnTop(true)
+    setTimeout(() => mainWindow.setAlwaysOnTop(false), 50)
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -50,6 +75,22 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  // ========================================================
+  // 🚨 GOD-MODE TRACKER 1: MAIN PROCESS FORENSICS
+  // ========================================================
+
+  // 1. Track if the OS thinks the window is physically focused
+  mainWindow.on('focus', () => console.log('\n🟢 [MAIN OS] Window FOCUS Gained'))
+  mainWindow.on('blur', () => console.log('\n🔴 [MAIN OS] Window FOCUS Lost'))
+
+  // 2. THE ULTIMATE WIRETAP: Catch keys before Chromium processes them
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    console.log(`\n⌨️ [MAIN WIRETAP] Key Detected: "${input.key}"`)
+    console.log(`   ├─ Event Type: ${input.type}`)
+    console.log(`   ├─ Is Window Focused?: ${mainWindow.isFocused()}`)
+    console.log(`   └─ Is DevTools Opened?: ${mainWindow.webContents.isDevToolsOpened()}`)
+  })
 }
 
 app.whenReady().then(() => {

@@ -10,17 +10,18 @@ interface Props {
 export default function TopNavigationBar({ currentMode, setMode }: Props) {
   const { currentUser, logout } = useAuth()
 
-  // 🚀 RBAC LOGIC: Admins see everything. Staff cannot see Settings.
+  // 🚀 RBAC LOGIC: Admins (1) and Root (0) see everything. Staff cannot see Settings.
+  const isAdmin = currentUser?.Role === 0 || currentUser?.Role === 1
   const tabs = ['POS', 'Returns', 'Inventory', 'Reports']
-  if (currentUser?.Role === 1) {
+
+  if (isAdmin) {
     tabs.push('Settings')
   }
 
-  // Native warning before logging out
+  // 🚀 THE FIX: NO MORE NATIVE DIALOGS.
   const handleLogout = () => {
-    if (window.confirm('Are you sure you want to log out?')) {
-      logout()
-    }
+    // We completely removed window.confirm() to prevent Chromium from dropping focus!
+    logout()
   }
 
   return (
@@ -48,7 +49,8 @@ export default function TopNavigationBar({ currentMode, setMode }: Props) {
         <div>
           {currentUser?.FullName}{' '}
           <span style={{ color: 'var(--text-muted)', fontWeight: 800 }}>
-            ({currentUser?.Role === 1 ? 'Admin' : 'Staff'})
+            ({currentUser?.Role === 0 ? 'System Root' : currentUser?.Role === 1 ? 'Admin' : 'Staff'}
+            )
           </span>
         </div>
 

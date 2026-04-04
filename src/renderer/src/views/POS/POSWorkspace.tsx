@@ -1,5 +1,6 @@
 // src/renderer/src/views/POS/POSWorkspace.tsx
 import React, { useState, useEffect, useMemo } from 'react'
+import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
 import { Product } from '../../types/models'
 import styles from './POSWorkspace.module.css'
 
@@ -59,7 +60,9 @@ export default function POSWorkspace() {
       const batches = await window.api.getProductBatches(product.Id)
       const activeBatches = batches.filter((b: any) => b.RemainingQuantity > 0)
 
-      if (activeBatches.length === 0) return alert('Inventory mismatch! No active batches found.')
+      if (activeBatches.length === 0) {
+        return Swal.fire('Inventory Mismatch', 'No active batches found for this product.', 'error')
+      }
 
       if (activeBatches.length === 1) {
         addToCart(product, activeBatches[0])
@@ -69,7 +72,7 @@ export default function POSWorkspace() {
       }
     } catch (err) {
       console.error(err)
-      alert('Error checking stock batches.')
+      Swal.fire('Error', 'Error checking stock batches.', 'error')
     }
   }
 
@@ -83,7 +86,11 @@ export default function POSWorkspace() {
       const currentQty = parseFloat(existingItem.quantity) || 0
 
       if (currentQty >= existingItem.availableStock) {
-        return alert(`Only ${existingItem.availableStock} left in this batch!`)
+        return Swal.fire(
+          'Stock Limit',
+          `Only ${existingItem.availableStock} left in this batch!`,
+          'warning'
+        )
       }
 
       const updatedCart = [...cartItems]
@@ -123,7 +130,7 @@ export default function POSWorkspace() {
         if (field === 'quantity') {
           const numVal = parseFloat(value) || 0
           if (numVal > item.availableStock) {
-            alert(`Only ${item.availableStock} left in this batch!`)
+            Swal.fire('Stock Limit', `Only ${item.availableStock} left in this batch!`, 'warning')
             return item
           }
         }
@@ -161,12 +168,22 @@ export default function POSWorkspace() {
 
   const handleProcessSale = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
-    if (cartItems.length === 0) return alert('Cart is empty!')
-    if (hasLossItem) return alert('Cannot process sale. One or more items are priced below cost!')
-    if (hasZeroQty) return alert('Cannot process sale. One or more items have a quantity of 0!')
+    if (cartItems.length === 0) return Swal.fire('Empty Cart', 'Cart is empty!', 'warning')
+    if (hasLossItem)
+      return Swal.fire(
+        'Sale Blocked',
+        'Cannot process sale. One or more items are priced below cost!',
+        'error'
+      )
+    if (hasZeroQty)
+      return Swal.fire(
+        'Sale Blocked',
+        'Cannot process sale. One or more items have a quantity of 0!',
+        'error'
+      )
 
     if (checkoutMode === 'credit' && !customerName.trim()) {
-      return alert('Customer name is required for a credit sale!')
+      return Swal.fire('Required Field', 'Customer name is required for a credit sale!', 'warning')
     }
 
     setIsProcessing(true)
@@ -210,18 +227,28 @@ export default function POSWorkspace() {
       setDownPayment('')
       loadData()
 
-      alert(`✅ Sale Successful!\nReceipt ID: ${receiptId}`)
+      Swal.fire('✅ Sale Successful!', `Receipt ID: ${receiptId}`, 'success')
     } catch (error: any) {
-      alert('Checkout failed: ' + error.message)
+      Swal.fire('Checkout Failed', error.message, 'error')
     } finally {
       setIsProcessing(false)
     }
   }
 
   const handleFastCheckout = async () => {
-    if (cartItems.length === 0) return alert('Cart is empty!')
-    if (hasLossItem) return alert('Cannot process sale. One or more items are priced below cost!')
-    if (hasZeroQty) return alert('Cannot process sale. One or more items have a quantity of 0!')
+    if (cartItems.length === 0) return Swal.fire('Empty Cart', 'Cart is empty!', 'warning')
+    if (hasLossItem)
+      return Swal.fire(
+        'Sale Blocked',
+        'Cannot process sale. One or more items are priced below cost!',
+        'error'
+      )
+    if (hasZeroQty)
+      return Swal.fire(
+        'Sale Blocked',
+        'Cannot process sale. One or more items have a quantity of 0!',
+        'error'
+      )
 
     setIsProcessing(true)
     try {
@@ -253,9 +280,9 @@ export default function POSWorkspace() {
       setSelectedCartUid(null)
       loadData()
 
-      alert(`✅ Fast Checkout Complete!\nReceipt ID: ${receiptId}`)
+      Swal.fire('✅ Fast Checkout Complete!', `Receipt ID: ${receiptId}`, 'success')
     } catch (error: any) {
-      alert('Checkout failed: ' + error.message)
+      Swal.fire('Checkout Failed', error.message, 'error')
     } finally {
       setIsProcessing(false)
     }
@@ -613,7 +640,9 @@ export default function POSWorkspace() {
             <button
               className={`${styles.checkoutBtn} ${styles.btnPayPrint}`}
               onClick={() =>
-                cartItems.length > 0 ? setCheckoutMode('cash') : alert('Cart is empty!')
+                cartItems.length > 0
+                  ? setCheckoutMode('cash')
+                  : Swal.fire('Empty Cart', 'Cart is empty!', 'warning')
               }
               disabled={hasLossItem || hasZeroQty}
             >
@@ -622,7 +651,9 @@ export default function POSWorkspace() {
             <button
               className={`${styles.checkoutBtn} ${styles.btnCredit}`}
               onClick={() =>
-                cartItems.length > 0 ? setCheckoutMode('credit') : alert('Cart is empty!')
+                cartItems.length > 0
+                  ? setCheckoutMode('credit')
+                  : Swal.fire('Empty Cart', 'Cart is empty!', 'warning')
               }
               disabled={hasLossItem || hasZeroQty}
             >

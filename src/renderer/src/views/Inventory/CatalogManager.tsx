@@ -1,5 +1,6 @@
 // src/renderer/src/views/Inventory/CatalogManager.tsx
 import React, { useState, useEffect, useMemo } from 'react'
+import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
 import { Category, Product } from '../../types/models'
 import styles from './CatalogManager.module.css'
 
@@ -11,7 +12,7 @@ export default function CatalogManager() {
   const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null)
   const [expandedFolders, setExpandedFolders] = useState<Set<number>>(new Set())
 
-  // 🚀 NEW: Global Search
+  // Global Search
   const [globalSearch, setGlobalSearch] = useState('')
 
   // State: Creation Modals
@@ -53,44 +54,58 @@ export default function CatalogManager() {
     if (currentFolder) setSelectedFolderId(currentFolder.ParentId)
   }
 
-  // 🚀 SECURED: Folder Deletion
   const handleDeleteFolder = async (id: number) => {
-    // 1. Check if folder has sub-folders
     const hasSubFolders = categories.some((c) => c.ParentId === id)
-    // 2. Check if folder has products
     const hasProducts = products.some((p) => p.CategoryId === id)
 
     if (hasSubFolders || hasProducts) {
-      return alert(
-        '🛑 ACTION DENIED: This folder is not empty!\n\nYou must move or delete all products and sub-folders inside it before deleting. This protects your database history.'
+      return Swal.fire(
+        'Action Denied',
+        'This folder is not empty!\n\nYou must move or delete all products and sub-folders inside it before deleting. This protects your database history.',
+        'error'
       )
     }
 
-    if (window.confirm('Are you sure you want to delete this empty folder?')) {
+    const confirmResult = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'Do you want to delete this empty folder?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!'
+    })
+
+    if (confirmResult.isConfirmed) {
       try {
         // @ts-ignore
         await window.api.deleteCategory(id)
         if (selectedFolderId === id) setSelectedFolderId(null)
         loadData()
       } catch (err) {
-        alert('Error deleting folder.')
+        Swal.fire('Error', 'Error deleting folder.', 'error')
       }
     }
   }
 
-  // 🚀 SECURED: Product Deletion UI Warning
   const handleDeleteProduct = async (id: number) => {
-    if (
-      window.confirm(
-        'Are you sure you want to remove this product from the catalog?\n\n(Note: Past sales history for this item will be safely preserved.)'
-      )
-    ) {
+    const confirmResult = await Swal.fire({
+      title: 'Delete Product?',
+      text: 'Are you sure you want to remove this product from the catalog?\n\n(Note: Past sales history for this item will be safely preserved.)',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete product'
+    })
+
+    if (confirmResult.isConfirmed) {
       try {
         // @ts-ignore
         await window.api.deleteProduct(id)
         loadData()
       } catch (err) {
-        alert('Error deleting product.')
+        Swal.fire('Error', 'Error deleting product.', 'error')
       }
     }
   }
@@ -113,7 +128,7 @@ export default function CatalogManager() {
 
     const safeName = newItemName.trim()
     if (!safeName) {
-      return alert('Folder name cannot be empty or just spaces.')
+      return Swal.fire('Error', 'Folder name cannot be empty or just spaces.', 'error')
     }
 
     try {
@@ -123,24 +138,31 @@ export default function CatalogManager() {
       setNewItemName('')
       loadData()
     } catch (err: any) {
-      // 🚀 FIXED: Human-readable duplicate errors
       if (err.message && err.message.includes('UNIQUE constraint failed')) {
-        alert(
-          'A folder with this name already exists in your catalog. Please choose a different name.'
+        Swal.fire(
+          'Duplicate',
+          'A folder with this name already exists in your catalog. Please choose a different name.',
+          'warning'
         )
       } else {
-        alert('Failed to create folder: ' + (err.message || 'Unknown error.'))
+        Swal.fire('Error', 'Failed to create folder: ' + (err.message || 'Unknown error.'), 'error')
       }
     }
   }
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedFolderId) return alert('You must be inside a folder to create a product.')
+    if (!selectedFolderId) {
+      return Swal.fire(
+        'Action Required',
+        'You must be inside a folder to create a product.',
+        'warning'
+      )
+    }
 
     const safeName = newItemName.trim()
     if (!safeName) {
-      return alert('Product name cannot be empty or just spaces.')
+      return Swal.fire('Error', 'Product name cannot be empty or just spaces.', 'error')
     }
 
     const generatedSKU = 'SKU-' + Math.floor(10000000 + Math.random() * 90000000)
@@ -164,11 +186,18 @@ export default function CatalogManager() {
       setProdUnit('Pcs')
       loadData()
     } catch (err: any) {
-      // 🚀 FIXED: Human-readable duplicate errors
       if (err.message && err.message.includes('UNIQUE constraint failed')) {
-        alert('A product with this name already exists in your catalog.')
+        Swal.fire(
+          'Duplicate',
+          'A product with this name already exists in your catalog.',
+          'warning'
+        )
       } else {
-        alert('Failed to create product: ' + (err.message || 'Unknown error.'))
+        Swal.fire(
+          'Error',
+          'Failed to create product: ' + (err.message || 'Unknown error.'),
+          'error'
+        )
       }
     }
   }
@@ -184,7 +213,7 @@ export default function CatalogManager() {
     if (!editingFolder) return
 
     const safeName = editFolderName.trim()
-    if (!safeName) return alert('Folder name cannot be empty.')
+    if (!safeName) return Swal.fire('Error', 'Folder name cannot be empty.', 'error')
 
     try {
       // @ts-ignore
@@ -192,11 +221,14 @@ export default function CatalogManager() {
       setEditingFolder(null)
       loadData()
     } catch (err: any) {
-      // 🚀 FIXED: Human-readable duplicate errors
       if (err.message && err.message.includes('UNIQUE constraint failed')) {
-        alert('A folder with this name already exists. Please choose a different name.')
+        Swal.fire(
+          'Duplicate',
+          'A folder with this name already exists. Please choose a different name.',
+          'warning'
+        )
       } else {
-        alert('Error updating folder: ' + err.message)
+        Swal.fire('Error', 'Error updating folder: ' + err.message, 'error')
       }
     }
   }
@@ -213,7 +245,7 @@ export default function CatalogManager() {
     if (!editingProduct) return
 
     const safeName = editProdName.trim()
-    if (!safeName) return alert('Product name cannot be empty.')
+    if (!safeName) return Swal.fire('Error', 'Product name cannot be empty.', 'error')
 
     try {
       const payload = {
@@ -227,11 +259,14 @@ export default function CatalogManager() {
       setEditingProduct(null)
       loadData()
     } catch (err: any) {
-      // 🚀 FIXED: Human-readable duplicate errors
       if (err.message && err.message.includes('UNIQUE constraint failed')) {
-        alert('A product with this name already exists in your catalog.')
+        Swal.fire(
+          'Duplicate',
+          'A product with this name already exists in your catalog.',
+          'warning'
+        )
       } else {
-        alert('Error updating product: ' + err.message)
+        Swal.fire('Error', 'Error updating product: ' + err.message, 'error')
       }
     }
   }
@@ -504,8 +539,14 @@ export default function CatalogManager() {
                   <button
                     className={styles.choiceBtn}
                     onClick={() => {
-                      if (!selectedFolderId)
-                        return alert('You must OPEN a folder before creating a product!')
+                      if (!selectedFolderId) {
+                        Swal.fire(
+                          'Action Required',
+                          'You must OPEN a folder before creating a product!',
+                          'warning'
+                        )
+                        return
+                      }
                       setModalView('PRODUCT')
                     }}
                   >

@@ -1,7 +1,7 @@
 // src/renderer/src/views/Inventory/InventoryWorkspace.tsx
 import { useState, useEffect } from 'react'
 import styles from '../../styles/SharedSidebar.module.css'
-import { useAuth } from '../../store/AuthContext' // 🚀 NEW: Import Auth
+import { useAuth } from '../../store/AuthContext'
 
 import ProductCatalog from './ProductCatalog'
 import SupplierManager from './SupplierManager'
@@ -12,7 +12,9 @@ import AdjustStock from './AdjustStock'
 export default function InventoryWorkspace() {
   const { currentUser } = useAuth()
   const [activeTab, setActiveTab] = useState('Products')
-  const isAdmin = currentUser?.Role === 1
+
+  // 🚀 RBAC: Recognize both Root and Admin
+  const isAdmin = currentUser?.Role === 0 || currentUser?.Role === 1
 
   // 🚀 RBAC: If a staff member tries to navigate to a blocked tab, kick them back to Products
   useEffect(() => {
@@ -29,7 +31,7 @@ export default function InventoryWorkspace() {
         return <StockInManager />
       case 'Adjustments':
         return <AdjustStock />
-      // 🚀 RBAC: Only render these if Admin
+      // 🚀 RBAC: Only render these if Admin/Root
       case 'Catalog':
         return isAdmin ? <CatalogManager /> : null
       case 'Suppliers':

@@ -1,5 +1,6 @@
 // src/renderer/src/views/Reports/SalesHistory.tsx
 import React, { useState, useEffect, useMemo } from 'react'
+import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
 import styles from './SalesHistory.module.css'
 
 export default function SalesHistory() {
@@ -27,8 +28,9 @@ export default function SalesHistory() {
       // IMPORTANT: Ensure your backend adds ' 23:59:59' to the endDate to capture the full last day!
       const data = await window.api.getSalesHistory(startDate, endDate, searchQuery.trim())
       setSales(data || [])
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load sales history', err)
+      Swal.fire('Error', 'Failed to load sales history: ' + err.message, 'error')
     } finally {
       setLoading(false)
     }
@@ -44,8 +46,33 @@ export default function SalesHistory() {
       // @ts-ignore
       const items = await window.api.getReceiptItems(txn.ReceiptId)
       setReceiptItems(items || [])
-    } catch (err) {
+    } catch (err: any) {
+      Swal.fire('Error', 'Failed to load receipt details: ' + err.message, 'error')
       setReceiptItems([])
+    }
+  }
+
+  // 🚀 REPLACED window.confirm for voiding a sale (if you ever implement that button here)
+  const handleVoidSale = async (receiptId: string) => {
+    const confirmResult = await Swal.fire({
+      title: 'Void Sale?',
+      text: `Are you sure you want to void receipt ${receiptId}? This will return all items to stock.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, void it!'
+    })
+
+    if (confirmResult.isConfirmed) {
+      try {
+        // @ts-ignore
+        await window.api.voidReceipt(receiptId)
+        Swal.fire('Success', 'Sale voided successfully.', 'success')
+        loadSalesHistory()
+      } catch (err: any) {
+        Swal.fire('Error', 'Error voiding sale: ' + err.message, 'error')
+      }
     }
   }
 

@@ -1,5 +1,6 @@
 // src/renderer/src/views/POS/ReturnsCenter.tsx
 import React, { useState, useMemo } from 'react'
+import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
 import styles from './ReturnsCenter.module.css'
 
 interface ReturnItem {
@@ -36,7 +37,7 @@ export default function ReturnsCenter() {
       const result = await window.api.getBillForReturn(searchQuery.trim())
 
       if (!result || !result.transaction) {
-        alert('Invoice not found. Please check the receipt number.')
+        Swal.fire('Not Found', 'Invoice not found. Please check the receipt number.', 'error')
         setLoading(false)
         return
       }
@@ -48,9 +49,9 @@ export default function ReturnsCenter() {
         QtyToReturn: ''
       }))
       setItems(mappedItems)
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
-      alert('Error searching for bill.')
+      Swal.fire('Error', 'Error searching for bill: ' + err.message, 'error')
     } finally {
       setLoading(false)
     }
@@ -86,7 +87,11 @@ export default function ReturnsCenter() {
     const itemsToReturn = items.filter((item) => (parseFloat(item.QtyToReturn) || 0) > 0)
 
     if (itemsToReturn.length === 0) {
-      return alert('Please enter a quantity to return for at least one item.')
+      return Swal.fire(
+        'Missing Information',
+        'Please enter a quantity to return for at least one item.',
+        'warning'
+      )
     }
 
     // 🚀 SECURITY FIX 1: Enforce whole numbers for physical items
@@ -94,8 +99,10 @@ export default function ReturnsCenter() {
     for (const item of itemsToReturn) {
       const qty = parseFloat(item.QtyToReturn)
       if (wholeUnits.includes(item.Unit) && qty % 1 !== 0) {
-        return alert(
-          `You cannot return partial quantities (${qty}) for items measured in ${item.Unit} (${item.ProductName}). Must be a whole number.`
+        return Swal.fire(
+          'Invalid Quantity',
+          `You cannot return partial quantities (${qty}) for items measured in ${item.Unit} (${item.ProductName}). Must be a whole number.`,
+          'error'
         )
       }
     }
@@ -103,14 +110,25 @@ export default function ReturnsCenter() {
     // 🚀 SECURITY FIX 2: Ensure a valid reason is provided
     const safeReason = returnReason.trim() || 'Manual Return (No Reason Provided)'
 
-    // 🚀 UX FIX: Generate a detailed confirmation message
-    let confirmMessage = `Are you sure you want to process this return?\n\nItems to be returned to stock:\n`
+    // 🚀 UX FIX: Generate a detailed confirmation message using Swal
+    let confirmMessage = `Items to be returned to stock:<br/>`
     itemsToReturn.forEach((item) => {
-      confirmMessage += `- ${item.QtyToReturn} ${item.Unit} of ${item.ProductName}\n`
+      confirmMessage += `- ${item.QtyToReturn} ${item.Unit} of ${item.ProductName}<br/>`
     })
-    confirmMessage += `\nTotal Cash to Refund Customer: Rs ${totalRefundAmount.toFixed(2)}`
+    confirmMessage += `<br/><b>Total Cash to Refund Customer: Rs ${totalRefundAmount.toFixed(2)}</b>`
 
-    if (window.confirm(confirmMessage)) {
+    // 🚀 REPLACED window.confirm
+    const confirmResult = await Swal.fire({
+      title: 'Process Return?',
+      html: confirmMessage,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#28a745',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, process return'
+    })
+
+    if (confirmResult.isConfirmed) {
       try {
         const payload = {
           ReceiptId: bill.ReceiptId,
@@ -127,7 +145,7 @@ export default function ReturnsCenter() {
 
         // @ts-ignore
         await window.api.processReturn(payload)
-        alert('✅ Return processed successfully!')
+        Swal.fire('Success', '✅ Return processed successfully!', 'success')
 
         // Trigger a fake submit to refresh the view
         setSearchQuery(bill.ReceiptId)
@@ -135,7 +153,7 @@ export default function ReturnsCenter() {
           .getElementById('searchForm')
           ?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))
       } catch (err: any) {
-        alert(err.message || 'Error processing return.')
+        Swal.fire('Error', err.message || 'Error processing return.', 'error')
       }
     }
   }
