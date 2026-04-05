@@ -1,6 +1,6 @@
 // src/renderer/src/views/Inventory/ProductCatalog.tsx
-import React, { useState, useEffect, useMemo } from 'react'
-import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
+import { useState, useEffect, useMemo } from 'react' // 🚀 Removed unused React import
+import Swal from 'sweetalert2'
 import { Category, Product } from '../../types/models'
 import styles from './ProductCatalog.module.css'
 
@@ -41,7 +41,6 @@ export default function ProductCatalog() {
       // @ts-ignore
       const batches = await window.api.getProductBatches(product.Id)
 
-      // 🚀 FIX: Filter out empty batches and sort by NEWEST first!
       const activeBatches = (batches || [])
         .filter((b: any) => b.RemainingQuantity > 0)
         .sort(
@@ -73,7 +72,7 @@ export default function ProductCatalog() {
               style={{ paddingLeft: `${depth * 15 + 10}px` }}
               onClick={() => {
                 setSelectedCatId(cat.Id)
-                setSearchQuery('') // 🚀 Clear search when clicking a folder
+                setSearchQuery('')
               }}
             >
               <span
@@ -101,7 +100,6 @@ export default function ProductCatalog() {
     return renderTree(null)
   }, [categories, expandedFolders, selectedCatId])
 
-  // 🚀 FIXED: Global Search overrides folder selection
   const displayedProducts = useMemo(() => {
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
@@ -111,7 +109,6 @@ export default function ProductCatalog() {
       )
     }
 
-    // If no search query, filter by selected folder (if any)
     return selectedCatId === null
       ? products
       : products.filter((p) => p.CategoryId === selectedCatId)
@@ -153,7 +150,7 @@ export default function ProductCatalog() {
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value)
-              if (e.target.value) setSelectedCatId(null) // 🚀 Deselect folder if searching globally
+              if (e.target.value) setSelectedCatId(null)
             }}
           />
         </div>
@@ -328,7 +325,6 @@ export default function ProductCatalog() {
                         const maxDiscountValue = batch.Discount || 0
                         const minAllowedPrice = batch.SellingPrice - maxDiscountValue
 
-                        // 🚀 FIXED: Protect against divide-by-zero errors!
                         const rawPercent =
                           batch.SellingPrice > 0 ? (maxDiscountValue / batch.SellingPrice) * 100 : 0
                         const discountPercentage =

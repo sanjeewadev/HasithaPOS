@@ -1,5 +1,5 @@
 // src/renderer/src/views/Reports/InventoryAlerts.tsx
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Product } from '../../types/models'
 import styles from './InventoryAlerts.module.css'
 

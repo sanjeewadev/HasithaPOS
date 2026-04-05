@@ -53,7 +53,8 @@ export default function SupplierManager() {
     const safePhone = phone.trim()
 
     if (!safeName) {
-      return Swal.fire('Error', 'Company name is required!', 'error')
+      Swal.fire('Error', 'Company name is required!', 'error')
+      return // 🚀 FIXED: Call Swal, then return
     }
 
     try {

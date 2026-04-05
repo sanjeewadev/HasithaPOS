@@ -1,5 +1,5 @@
 // src/renderer/src/views/Reports/Dashboard.tsx
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import {
   BarChart,
   Bar,

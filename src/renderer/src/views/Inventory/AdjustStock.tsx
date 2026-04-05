@@ -71,45 +71,51 @@ export default function AdjustStock() {
 
   const handleAdjustStock = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // 🚀 FIXED: Call Swal, then return void
     if (!selectedProduct || !selectedBatchId) {
-      return Swal.fire('Missing Info', 'Select a product and a batch.', 'warning')
+      Swal.fire('Missing Info', 'Select a product and a batch.', 'warning')
+      return
     }
 
     const qty = parseFloat(qtyToRemove)
     if (isNaN(qty) || qty <= 0) {
-      return Swal.fire('Invalid Quantity', 'Enter a valid quantity greater than 0.', 'error')
+      Swal.fire('Invalid Quantity', 'Enter a valid quantity greater than 0.', 'error')
+      return
     }
 
     const wholeUnits = ['Pcs', 'Box', 'Set']
     if (wholeUnits.includes(selectedProduct.Unit) && qty % 1 !== 0) {
-      return Swal.fire(
+      Swal.fire(
         'Invalid Quantity',
         `You cannot remove partial quantities (${qty}) for items measured in ${selectedProduct.Unit}. Must be a whole number.`,
         'error'
       )
+      return
     }
 
     const safeNote = note.trim()
     if (reason === '1' && safeNote.length < 5) {
-      return Swal.fire(
+      Swal.fire(
         'Security Requirement',
         'You must provide a clear reason/note (at least 5 characters) explaining why this item is being marked as Lost or Damaged.',
         'warning'
       )
+      return
     }
 
     const batch = activeBatches.find((b) => b.Id.toString() === selectedBatchId)
     if (!batch) return
 
     if (qty > batch.RemainingQuantity) {
-      return Swal.fire(
+      Swal.fire(
         'Insufficient Stock',
         `Cannot remove ${qty}. Only ${batch.RemainingQuantity} left in this batch.`,
         'error'
       )
+      return
     }
 
-    // 🚀 REPLACED window.confirm
     const confirmResult = await Swal.fire({
       title: '🚨 WARNING: Permanent Action',
       text: `You are about to permanently remove ${qty} ${selectedProduct.Unit} of ${selectedProduct.Name} from the system.\n\nFinancial Loss: Rs ${(qty * batch.CostPrice).toFixed(2)}`,
@@ -133,11 +139,10 @@ export default function AdjustStock() {
         // @ts-ignore
         await window.api.adjustStock(payload)
 
-        // 🚀 REPLACED alert
         Swal.fire('Success!', 'Stock removed successfully. Financial records updated.', 'success')
 
         loadBaseData()
-        handleSelectProduct(selectedProduct) // Refresh the exact product view
+        handleSelectProduct(selectedProduct)
       } catch (err: any) {
         Swal.fire('Error', err.message || 'Error adjusting stock.', 'error')
       }

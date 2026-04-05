@@ -59,11 +59,13 @@ export default function CatalogManager() {
     const hasProducts = products.some((p) => p.CategoryId === id)
 
     if (hasSubFolders || hasProducts) {
-      return Swal.fire(
+      // 🚀 FIXED: Call Swal, then return
+      Swal.fire(
         'Action Denied',
         'This folder is not empty!\n\nYou must move or delete all products and sub-folders inside it before deleting. This protects your database history.',
         'error'
       )
+      return
     }
 
     const confirmResult = await Swal.fire({
@@ -128,7 +130,9 @@ export default function CatalogManager() {
 
     const safeName = newItemName.trim()
     if (!safeName) {
-      return Swal.fire('Error', 'Folder name cannot be empty or just spaces.', 'error')
+      // 🚀 FIXED: Call Swal, then return
+      Swal.fire('Error', 'Folder name cannot be empty or just spaces.', 'error')
+      return
     }
 
     try {
@@ -153,16 +157,16 @@ export default function CatalogManager() {
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedFolderId) {
-      return Swal.fire(
-        'Action Required',
-        'You must be inside a folder to create a product.',
-        'warning'
-      )
+      // 🚀 FIXED: Call Swal, then return
+      Swal.fire('Action Required', 'You must be inside a folder to create a product.', 'warning')
+      return
     }
 
     const safeName = newItemName.trim()
     if (!safeName) {
-      return Swal.fire('Error', 'Product name cannot be empty or just spaces.', 'error')
+      // 🚀 FIXED: Call Swal, then return
+      Swal.fire('Error', 'Product name cannot be empty or just spaces.', 'error')
+      return
     }
 
     const generatedSKU = 'SKU-' + Math.floor(10000000 + Math.random() * 90000000)
@@ -213,7 +217,11 @@ export default function CatalogManager() {
     if (!editingFolder) return
 
     const safeName = editFolderName.trim()
-    if (!safeName) return Swal.fire('Error', 'Folder name cannot be empty.', 'error')
+    if (!safeName) {
+      // 🚀 FIXED: Call Swal, then return
+      Swal.fire('Error', 'Folder name cannot be empty.', 'error')
+      return
+    }
 
     try {
       // @ts-ignore
@@ -245,7 +253,11 @@ export default function CatalogManager() {
     if (!editingProduct) return
 
     const safeName = editProdName.trim()
-    if (!safeName) return Swal.fire('Error', 'Product name cannot be empty.', 'error')
+    if (!safeName) {
+      // 🚀 FIXED: Call Swal, then return
+      Swal.fire('Error', 'Product name cannot be empty.', 'error')
+      return
+    }
 
     try {
       const payload = {

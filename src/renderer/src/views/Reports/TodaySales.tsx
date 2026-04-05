@@ -1,5 +1,5 @@
 // src/renderer/src/views/Reports/TodaySales.tsx
-import React, { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
 import styles from './TodaySales.module.css'
 

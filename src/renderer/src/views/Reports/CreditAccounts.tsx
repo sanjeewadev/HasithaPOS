@@ -1,6 +1,6 @@
 // src/renderer/src/views/Reports/CreditAccounts.tsx
-import React, { useState, useEffect, useMemo } from 'react'
-import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
+import { useState, useEffect, useMemo } from 'react' // 🚀 Removed unused React import
+import Swal from 'sweetalert2'
 import styles from './CreditAccounts.module.css'
 
 export default function CreditAccounts() {
@@ -8,7 +8,7 @@ export default function CreditAccounts() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
 
-  // 🚀 NEW: Invoice-based Modal State
+  // Invoice-based Modal State
   const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null)
   const [paymentAmount, setPaymentAmount] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
@@ -32,31 +32,32 @@ export default function CreditAccounts() {
 
   const handleOpenSettle = (invoice: any) => {
     setSelectedInvoice(invoice)
-    // Automatically default to the full pending amount to save time!
     setPaymentAmount(invoice.TotalPending.toFixed(2))
   }
 
   const handleProcessPayment = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // 🚀 SECURITY FIX: Safe Floating Point Math
     const amount = parseFloat(paymentAmount)
     if (isNaN(amount) || amount <= 0) {
-      return Swal.fire('Invalid Amount', 'Enter a valid payment amount greater than 0.', 'warning')
+      // 🚀 FIXED: Call Swal, then return
+      Swal.fire('Invalid Amount', 'Enter a valid payment amount greater than 0.', 'warning')
+      return
     }
 
     const safeAmount = parseFloat(amount.toFixed(2))
     const safePending = parseFloat(selectedInvoice.TotalPending.toFixed(2))
 
     if (safeAmount > safePending) {
-      return Swal.fire(
+      // 🚀 FIXED: Call Swal, then return
+      Swal.fire(
         'Invalid Amount',
         `Payment (Rs ${safeAmount.toFixed(2)}) cannot exceed the total pending debt of Rs ${safePending.toFixed(2)}`,
         'error'
       )
+      return
     }
 
-    // 🚀 REPLACED window.confirm
     const confirmResult = await Swal.fire({
       title: 'Process Payment?',
       text: `Process payment of Rs ${safeAmount.toFixed(2)} for Invoice ${selectedInvoice.ReceiptId}?`,
@@ -133,7 +134,14 @@ export default function CreditAccounts() {
               </tr>
             </thead>
             <tbody>
-              {displayedInvoices.length === 0 ? (
+              {/* 🚀 FIXED: Used the loading state so TypeScript doesn't complain */}
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className={styles.emptyMsg}>
+                    Loading invoices...
+                  </td>
+                </tr>
+              ) : displayedInvoices.length === 0 ? (
                 <tr>
                   <td colSpan={7} className={styles.emptyMsg}>
                     {searchQuery
@@ -209,7 +217,6 @@ export default function CreditAccounts() {
               <form onSubmit={handleProcessPayment} className={styles.paymentForm}>
                 <div className={styles.formGroup}>
                   <label>Cash Received (Rs)</label>
-                  {/* 🚀 UX FIX: Secure text input for currency */}
                   <input
                     type="text"
                     inputMode="decimal"

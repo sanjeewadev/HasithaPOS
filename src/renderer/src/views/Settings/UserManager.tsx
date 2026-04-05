@@ -1,6 +1,6 @@
 // src/renderer/src/views/Settings/UserManager.tsx
-import React, { useState, useEffect } from 'react'
-import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
+import { useState, useEffect } from 'react' // 🚀 Removed unused React import
+import Swal from 'sweetalert2'
 import { User } from '../../types/models'
 import { useAuth } from '../../store/AuthContext'
 import styles from './UserManager.module.css'
@@ -81,13 +81,15 @@ export default function UserManager() {
     const safeUsername = username.trim().toLowerCase()
 
     if (!safeFullName || !safeUsername) {
-      // 🚀 REPLACED alert
-      return Swal.fire('Missing Information', 'Name and Username are required!', 'warning')
+      // 🚀 FIXED: Call Swal, then return void
+      Swal.fire('Missing Information', 'Name and Username are required!', 'warning')
+      return
     }
 
     if (!editingId && !password) {
-      // 🚀 REPLACED alert
-      return Swal.fire('Missing Information', 'A password is required for new users!', 'warning')
+      // 🚀 FIXED: Call Swal, then return void
+      Swal.fire('Missing Information', 'A password is required for new users!', 'warning')
+      return
     }
 
     let finalHash = existingHash
@@ -112,43 +114,37 @@ export default function UserManager() {
       if (editingId) {
         // @ts-ignore
         await window.api.updateUser(payload)
-        // 🚀 REPLACED alert
         Swal.fire('Success', 'User updated successfully.', 'success')
       } else {
         const isDuplicate = users.some((u) => u.Username.toLowerCase() === safeUsername)
         if (isDuplicate) {
-          // 🚀 REPLACED alert
-          return Swal.fire(
-            'Duplicate Username',
-            `Username '${safeUsername}' is already taken.`,
-            'error'
-          )
+          // 🚀 FIXED: Call Swal, then return void
+          Swal.fire('Duplicate Username', `Username '${safeUsername}' is already taken.`, 'error')
+          return
         }
 
         // @ts-ignore
         await window.api.addUser(payload)
-        // 🚀 REPLACED alert
         Swal.fire('Success', 'User created successfully.', 'success')
       }
       handleClear()
       loadUsers()
     } catch (err: any) {
-      // 🚀 REPLACED alert
       Swal.fire('Error', `Error saving user: ${err.message}`, 'error')
     }
   }
 
   const handleToggleBlock = async (u: User, currentStatus: boolean) => {
     if (u.Role === 0 || u.Id === currentUser?.Id) {
-      // 🚀 REPLACED alert
-      return Swal.fire(
+      // 🚀 FIXED: Call Swal, then return void
+      Swal.fire(
         'Security Warning',
         'You cannot block yourself or the Master Root account.',
         'error'
       )
+      return
     }
 
-    // 🚀 REPLACED window.confirm
     const confirmResult = await Swal.fire({
       title: `${currentStatus ? 'BLOCK' : 'UNBLOCK'} USER?`,
       text: `Are you sure you want to ${currentStatus ? 'block' : 'unblock'} ${u.Username}?`,

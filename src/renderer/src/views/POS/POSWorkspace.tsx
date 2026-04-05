@@ -61,7 +61,9 @@ export default function POSWorkspace() {
       const activeBatches = batches.filter((b: any) => b.RemainingQuantity > 0)
 
       if (activeBatches.length === 0) {
-        return Swal.fire('Inventory Mismatch', 'No active batches found for this product.', 'error')
+        // 🚀 FIXED: Call Swal, then return
+        Swal.fire('Inventory Mismatch', 'No active batches found for this product.', 'error')
+        return
       }
 
       if (activeBatches.length === 1) {
@@ -86,11 +88,13 @@ export default function POSWorkspace() {
       const currentQty = parseFloat(existingItem.quantity) || 0
 
       if (currentQty >= existingItem.availableStock) {
-        return Swal.fire(
+        // 🚀 FIXED: Call Swal, then return
+        Swal.fire(
           'Stock Limit',
           `Only ${existingItem.availableStock} left in this batch!`,
           'warning'
         )
+        return
       }
 
       const updatedCart = [...cartItems]
@@ -168,22 +172,34 @@ export default function POSWorkspace() {
 
   const handleProcessSale = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
-    if (cartItems.length === 0) return Swal.fire('Empty Cart', 'Cart is empty!', 'warning')
-    if (hasLossItem)
-      return Swal.fire(
+
+    // 🚀 FIXED: Call Swal, then return
+    if (cartItems.length === 0) {
+      Swal.fire('Empty Cart', 'Cart is empty!', 'warning')
+      return
+    }
+
+    if (hasLossItem) {
+      Swal.fire(
         'Sale Blocked',
         'Cannot process sale. One or more items are priced below cost!',
         'error'
       )
-    if (hasZeroQty)
-      return Swal.fire(
+      return
+    }
+
+    if (hasZeroQty) {
+      Swal.fire(
         'Sale Blocked',
         'Cannot process sale. One or more items have a quantity of 0!',
         'error'
       )
+      return
+    }
 
     if (checkoutMode === 'credit' && !customerName.trim()) {
-      return Swal.fire('Required Field', 'Customer name is required for a credit sale!', 'warning')
+      Swal.fire('Required Field', 'Customer name is required for a credit sale!', 'warning')
+      return
     }
 
     setIsProcessing(true)
@@ -236,19 +252,29 @@ export default function POSWorkspace() {
   }
 
   const handleFastCheckout = async () => {
-    if (cartItems.length === 0) return Swal.fire('Empty Cart', 'Cart is empty!', 'warning')
-    if (hasLossItem)
-      return Swal.fire(
+    // 🚀 FIXED: Call Swal, then return
+    if (cartItems.length === 0) {
+      Swal.fire('Empty Cart', 'Cart is empty!', 'warning')
+      return
+    }
+
+    if (hasLossItem) {
+      Swal.fire(
         'Sale Blocked',
         'Cannot process sale. One or more items are priced below cost!',
         'error'
       )
-    if (hasZeroQty)
-      return Swal.fire(
+      return
+    }
+
+    if (hasZeroQty) {
+      Swal.fire(
         'Sale Blocked',
         'Cannot process sale. One or more items have a quantity of 0!',
         'error'
       )
+      return
+    }
 
     setIsProcessing(true)
     try {
@@ -639,22 +665,26 @@ export default function POSWorkspace() {
           <div className={styles.checkoutBtnGrid}>
             <button
               className={`${styles.checkoutBtn} ${styles.btnPayPrint}`}
-              onClick={() =>
-                cartItems.length > 0
-                  ? setCheckoutMode('cash')
-                  : Swal.fire('Empty Cart', 'Cart is empty!', 'warning')
-              }
+              onClick={() => {
+                if (cartItems.length > 0) {
+                  setCheckoutMode('cash')
+                } else {
+                  Swal.fire('Empty Cart', 'Cart is empty!', 'warning')
+                }
+              }}
               disabled={hasLossItem || hasZeroQty}
             >
               PAY & PRINT
             </button>
             <button
               className={`${styles.checkoutBtn} ${styles.btnCredit}`}
-              onClick={() =>
-                cartItems.length > 0
-                  ? setCheckoutMode('credit')
-                  : Swal.fire('Empty Cart', 'Cart is empty!', 'warning')
-              }
+              onClick={() => {
+                if (cartItems.length > 0) {
+                  setCheckoutMode('credit')
+                } else {
+                  Swal.fire('Empty Cart', 'Cart is empty!', 'warning')
+                }
+              }}
               disabled={hasLossItem || hasZeroQty}
             >
               CREDIT SALE

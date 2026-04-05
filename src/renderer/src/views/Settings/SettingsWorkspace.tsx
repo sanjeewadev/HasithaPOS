@@ -1,12 +1,12 @@
 // src/renderer/src/views/Settings/SettingsWorkspace.tsx
 import { useState } from 'react'
 import styles from '../../styles/SharedSidebar.module.css' // Using shared CSS!
-import { useAuth } from '../../store/AuthContext'
+// 🚀 Removed the unused useAuth import
 import UserManager from './UserManager'
 import SystemBackups from './SystemBackups'
 
 export default function SettingsWorkspace() {
-  const { currentUser } = useAuth()
+  // 🚀 FIXED: Removed the unused currentUser variable
   const [activeTab, setActiveTab] = useState('Users')
 
   const renderContent = () => {
@@ -14,7 +14,7 @@ export default function SettingsWorkspace() {
       case 'Users':
         return <UserManager />
       case 'System':
-        return <SystemBackups /> // 🚀 Replace the old placeholder with the real component!
+        return <SystemBackups />
       default:
         return null
     }

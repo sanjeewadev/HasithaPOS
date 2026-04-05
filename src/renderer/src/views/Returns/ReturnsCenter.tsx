@@ -1,6 +1,6 @@
-// src/renderer/src/views/POS/ReturnsCenter.tsx
-import React, { useState, useMemo } from 'react'
-import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
+// src/renderer/src/views/Returns/ReturnsCenter.tsx
+import { useState, useMemo } from 'react' // 🚀 Removed unused React import
+import Swal from 'sweetalert2'
 import styles from './ReturnsCenter.module.css'
 
 interface ReturnItem {
@@ -87,11 +87,13 @@ export default function ReturnsCenter() {
     const itemsToReturn = items.filter((item) => (parseFloat(item.QtyToReturn) || 0) > 0)
 
     if (itemsToReturn.length === 0) {
-      return Swal.fire(
+      // 🚀 FIXED: Call Swal, then return void
+      Swal.fire(
         'Missing Information',
         'Please enter a quantity to return for at least one item.',
         'warning'
       )
+      return
     }
 
     // 🚀 SECURITY FIX 1: Enforce whole numbers for physical items
@@ -99,11 +101,13 @@ export default function ReturnsCenter() {
     for (const item of itemsToReturn) {
       const qty = parseFloat(item.QtyToReturn)
       if (wholeUnits.includes(item.Unit) && qty % 1 !== 0) {
-        return Swal.fire(
+        // 🚀 FIXED: Call Swal, then return void
+        Swal.fire(
           'Invalid Quantity',
           `You cannot return partial quantities (${qty}) for items measured in ${item.Unit} (${item.ProductName}). Must be a whole number.`,
           'error'
         )
+        return
       }
     }
 
@@ -117,7 +121,6 @@ export default function ReturnsCenter() {
     })
     confirmMessage += `<br/><b>Total Cash to Refund Customer: Rs ${totalRefundAmount.toFixed(2)}</b>`
 
-    // 🚀 REPLACED window.confirm
     const confirmResult = await Swal.fire({
       title: 'Process Return?',
       html: confirmMessage,
