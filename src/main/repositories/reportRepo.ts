@@ -1,4 +1,3 @@
-// src/main/repositories/reportRepo.ts
 import { getDb } from '../database'
 
 // ==========================================
@@ -100,7 +99,6 @@ export function getTopSellers(limit: number = 5) {
     .all(limit)
 }
 
-// 🚀 UPGRADED: Pulls ALL items at or below threshold (Default: 10)
 export function getLowStockAlerts(threshold: number = 10) {
   const db = getDb()
   return db
@@ -195,12 +193,11 @@ export function getBillForReturn(receiptId: string) {
 }
 
 // ==========================================
-// 💳 4. CREDIT & DEBT MANAGEMENT (🚀 REWRITTEN FOR INVOICES)
+// 💳 4. CREDIT & DEBT MANAGEMENT
 // ==========================================
 
 export function getPendingCreditAccounts() {
   const db = getDb()
-  // 🚀 FIX: No longer grouping by Customer. We return every individual unpaid invoice!
   return db
     .prepare(
       `
@@ -221,7 +218,6 @@ export function getPendingCreditAccounts() {
     .all()
 }
 
-// 🚀 FIX: Renamed the internal parameter to receiptId to apply payment to ONE exact bill.
 export function processCreditPayment(receiptId: string, amountToPay: number) {
   const db = getDb()
 
@@ -230,14 +226,23 @@ export function processCreditPayment(receiptId: string, amountToPay: number) {
     const bill: any = db
       .prepare('SELECT TotalAmount, PaidAmount FROM SalesTransactions WHERE ReceiptId = ?')
       .get(rId)
+
     if (!bill) throw new Error('Invoice not found!')
+
+    // 🚀 THE FIX: Database-Level Overpayment Protection
+    const remainingDebt = bill.TotalAmount - bill.PaidAmount
+    if (amount > remainingDebt + 0.01) {
+      throw new Error(
+        `CRITICAL: Payment of Rs ${amount} exceeds the remaining debt of Rs ${remainingDebt.toFixed(2)}`
+      )
+    }
 
     // 2. Safely apply payment and perfectly calculate new Status (0 = Fully Paid, 2 = Partially Paid)
     db.prepare(
       `
       UPDATE SalesTransactions 
       SET PaidAmount = PaidAmount + ?, 
-          Status = CASE WHEN PaidAmount + ? >= TotalAmount THEN 0 ELSE 2 END
+          Status = CASE WHEN PaidAmount + ? >= TotalAmount - 0.01 THEN 0 ELSE 2 END
       WHERE ReceiptId = ?
     `
     ).run(amount, amount, rId)
@@ -267,12 +272,12 @@ export function getAuditLogs(startDate: string, endDate: string) {
 }
 
 export function getDashboardDataFromDB(startDate: string, endDate: string) {
-  const db = getDb() // Use your database connection instance
+  const db = getDb()
 
-  // 🚀 FIX: Append 23:59:59 so it includes sales made at the end of the day!
+  // Append 23:59:59 so it includes sales made at the end of the day!
   const endDateTime = endDate + ' 23:59:59'
 
-  // 1. Gross Sales (For the selected period)
+  // 1. Gross Sales
   const salesResult = db
     .prepare(
       `
@@ -283,22 +288,23 @@ export function getDashboardDataFromDB(startDate: string, endDate: string) {
     )
     .get(startDate, endDateTime) as any
 
-  // 2. Net Profit (For the selected period)
-  // Calculates: (Sold Price - Bought Price) * Quantity for all valid receipts
+  // 2. Net Profit (🚀 FIXED: Subtracts profit lost from Returns!)
   const profitResult = db
     .prepare(
       `
-    SELECT SUM((UnitPrice - UnitCost) * Quantity) as total
+    SELECT 
+      SUM(CASE WHEN Type = 2 THEN (UnitPrice - UnitCost) * Quantity ELSE 0 END) -
+      SUM(CASE WHEN Type = 4 THEN (UnitPrice - UnitCost) * Quantity ELSE 0 END) as total
     FROM StockMovements
     WHERE ReceiptId IN (
       SELECT ReceiptId FROM SalesTransactions 
       WHERE Status != 3 AND TransactionDate BETWEEN ? AND ?
-    )
+    ) AND Type IN (2, 4)
   `
     )
     .get(startDate, endDateTime) as any
 
-  // 3. Pending Credit (ALL TIME - because debt doesn't disappear if you change the date filter!)
+  // 3. Pending Credit
   const creditResult = db
     .prepare(
       `
@@ -309,7 +315,7 @@ export function getDashboardDataFromDB(startDate: string, endDate: string) {
     )
     .get() as any
 
-  // 4. Chart Data (Grouped by Day for the selected period)
+  // 4. Chart Data
   const chartRows = db
     .prepare(
       `
@@ -324,14 +330,16 @@ export function getDashboardDataFromDB(startDate: string, endDate: string) {
     )
     .all(startDate, endDateTime) as any[]
 
-  // We loop through the chart rows to calculate the profit per day
+  // 🚀 FIXED: Daily chart profit now properly deducts returns!
   const profitStmt = db.prepare(`
-    SELECT SUM((UnitPrice - UnitCost) * Quantity) as dailyProfit
+    SELECT 
+      SUM(CASE WHEN Type = 2 THEN (UnitPrice - UnitCost) * Quantity ELSE 0 END) -
+      SUM(CASE WHEN Type = 4 THEN (UnitPrice - UnitCost) * Quantity ELSE 0 END) as dailyProfit
     FROM StockMovements
     WHERE ReceiptId IN (
       SELECT ReceiptId FROM SalesTransactions 
       WHERE Status != 3 AND DATE(TransactionDate) = ?
-    )
+    ) AND Type IN (2, 4)
   `)
 
   const finalChartData = chartRows.map((row) => {
@@ -343,7 +351,6 @@ export function getDashboardDataFromDB(startDate: string, endDate: string) {
     }
   })
 
-  // Return the perfectly formatted package back to the React frontend!
   return {
     metrics: {
       grossSales: salesResult.total || 0,

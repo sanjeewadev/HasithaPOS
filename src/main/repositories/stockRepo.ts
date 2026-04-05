@@ -1,4 +1,3 @@
-// src/main/repositories/stockRepo.ts
 import { getDb } from '../database'
 
 // ==========================================
@@ -8,7 +7,6 @@ export function processGRN(payload: any) {
   const db = getDb()
 
   const grnTxn = db.transaction((data) => {
-    // 🚀 NEW: We now extract the InvoiceDate sent from the frontend!
     const { SupplierId, ReferenceNo, InvoiceDate, Items } = data
 
     let totalAmount = 0
@@ -16,7 +14,6 @@ export function processGRN(payload: any) {
       totalAmount += item.total
     }
 
-    // 1. Create Purchase Invoice (🚀 Added Date)
     const insertInvoice = db
       .prepare(
         `
@@ -28,7 +25,6 @@ export function processGRN(payload: any) {
 
     const invoiceId = insertInvoice.lastInsertRowid
 
-    // 2. Prepare statements (🚀 Added ReceivedDate & Date)
     const insertBatchStmt = db.prepare(`
       INSERT INTO StockBatches (ProductId, InitialQuantity, RemainingQuantity, CostPrice, SellingPrice, Discount, DiscountCode, PurchaseInvoiceId, ReceivedDate) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -45,7 +41,6 @@ export function processGRN(payload: any) {
       WHERE Id = ?
     `)
 
-    // 3. Process every item
     for (const item of Items) {
       const rnd = Math.floor(Math.random() * 9)
       const discountCode = `${rnd}${String(item.discountLimit).padStart(3, '0')}${rnd}`
@@ -59,7 +54,7 @@ export function processGRN(payload: any) {
         item.discountLimit,
         discountCode,
         invoiceId,
-        InvoiceDate // 🚀 Custom Date
+        InvoiceDate
       )
       const batchId = batchResult.lastInsertRowid
 
@@ -70,7 +65,7 @@ export function processGRN(payload: any) {
         item.sellPrice,
         batchId,
         ReferenceNo,
-        InvoiceDate // 🚀 Custom Date
+        InvoiceDate
       )
 
       updateProductStmt.run(
@@ -115,7 +110,6 @@ export function processCompleteSale(transaction: any, movements: any[]) {
     `)
 
     for (const move of movs) {
-      // 🚀 FIX: Fetch CostPrice securely from the database, ignore the frontend!
       const batch: any = db
         .prepare('SELECT RemainingQuantity, CostPrice FROM StockBatches WHERE Id = ?')
         .get(move.StockBatchId)
@@ -135,10 +129,10 @@ export function processCompleteSale(transaction: any, movements: any[]) {
       insertMovementStmt.run(
         new Date().toISOString(),
         move.ProductId,
-        2, // Type 2 = Sale Out
+        2,
         move.Quantity,
-        batch.CostPrice, // 🚀 SECURE: Uses the exact supplier buying price!
-        move.UnitPrice, // 🚀 Uses the final discounted selling price!
+        batch.CostPrice,
+        move.UnitPrice,
         move.StockBatchId,
         move.Note || '',
         txn.ReceiptId
@@ -243,7 +237,6 @@ export function getLowStockProducts(threshold: number) {
     .all(threshold)
 }
 
-// 🚀 THE THREE MISSING GRN/BILLS QUERIES!
 export function getSupplierInvoices(supplierId: number) {
   return getDb()
     .prepare('SELECT * FROM PurchaseInvoices WHERE SupplierId = ? ORDER BY Date DESC')
@@ -285,7 +278,6 @@ export function voidReceipt(receiptId: string) {
   const db = getDb()
 
   const voidTxn = db.transaction((rId) => {
-    // 1. Find the transaction
     const txn: any = db
       .prepare(
         'SELECT TransactionDate, Status, IsCredit, PaidAmount FROM SalesTransactions WHERE ReceiptId = ?'
@@ -295,7 +287,6 @@ export function voidReceipt(receiptId: string) {
     if (!txn) throw new Error('Receipt not found.')
     if (txn.Status === 3) throw new Error('This receipt is already voided.')
 
-    // 2. TIME LOCK: Only allow voids for TODAY
     const today = new Date().toISOString().split('T')[0]
     if (!txn.TransactionDate.startsWith(today)) {
       throw new Error(
@@ -303,14 +294,12 @@ export function voidReceipt(receiptId: string) {
       )
     }
 
-    // 3. Block complex credit voids
     if (txn.IsCredit === 1 && txn.PaidAmount > 0) {
       throw new Error(
         'Cannot void a credit sale with partial payments. Please use the Returns page.'
       )
     }
 
-    // 4. Block if items were already returned
     const hasReturns: any = db
       .prepare('SELECT COUNT(*) as count FROM StockMovements WHERE ReceiptId = ? AND Type = 4')
       .get(rId)
@@ -318,10 +307,8 @@ export function voidReceipt(receiptId: string) {
       throw new Error('Action Blocked: This bill already has returned items.')
     }
 
-    // 5. THE FIX: Mark as Voided (Status = 3). NEVER DELETE!
     db.prepare('UPDATE SalesTransactions SET Status = 3 WHERE ReceiptId = ?').run(rId)
 
-    // 6. Get all the items sold on this bill
     const movements: any[] = db
       .prepare('SELECT * FROM StockMovements WHERE ReceiptId = ? AND IsVoided = 0 AND Type = 2')
       .all(rId)
@@ -334,7 +321,6 @@ export function voidReceipt(receiptId: string) {
       'UPDATE StockBatches SET RemainingQuantity = RemainingQuantity + ? WHERE Id = ?'
     )
 
-    // 7. Put all items safely back into stock
     for (const move of movements) {
       updateMoveStmt.run(move.Id)
       updateProdStmt.run(move.Quantity, move.ProductId)
@@ -342,13 +328,11 @@ export function voidReceipt(receiptId: string) {
     }
   })
 
-  // Run the transaction
   voidTxn(receiptId)
   return { success: true }
 }
 
 export function getProductAdjustments(productId: number) {
-  // Type 3 means "Adjustment" in our system!
   return getDb()
     .prepare(
       `
@@ -392,7 +376,7 @@ export function processReturn(payload: any) {
       insertMovementStmt.run(
         timestamp,
         item.ProductId,
-        item.Quantity, // How many they are bringing back
+        item.Quantity,
         item.UnitCost,
         item.UnitPrice,
         item.StockBatchId,
@@ -407,8 +391,32 @@ export function processReturn(payload: any) {
       updateProductStmt.run(item.Quantity, item.ProductId)
     }
 
-    // 3. Financial Adjustment (Optional: You can add logic here to update SalesTransactions
-    // if you want to track total "RefundedAmount" on the bill record)
+    // 🚀 THE FIX: 3. Financial Adjustment for the Invoice
+    const txn: any = db
+      .prepare(
+        'SELECT TotalAmount, PaidAmount, IsCredit FROM SalesTransactions WHERE ReceiptId = ?'
+      )
+      .get(ReceiptId)
+    if (txn) {
+      const newTotal = Math.max(0, txn.TotalAmount - RefundAmount)
+      let newPaid = txn.PaidAmount
+
+      if (txn.IsCredit === 0) {
+        newPaid = Math.max(0, newPaid - RefundAmount)
+      } else {
+        if (newPaid > newTotal) newPaid = newTotal
+      }
+
+      let status = 0
+      if (txn.IsCredit === 1) {
+        if (newPaid === 0 && newTotal > 0) status = 1
+        else if (newPaid < newTotal) status = 2
+      }
+
+      db.prepare(
+        'UPDATE SalesTransactions SET TotalAmount = ?, PaidAmount = ?, Status = ? WHERE ReceiptId = ?'
+      ).run(newTotal, newPaid, status, ReceiptId)
+    }
   })
 
   returnTxn(payload)
