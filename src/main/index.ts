@@ -85,7 +85,8 @@ function createWindow(): void {
   mainWindow.on('blur', () => console.log('\n🔴 [MAIN OS] Window FOCUS Lost'))
 
   // 2. THE ULTIMATE WIRETAP: Catch keys before Chromium processes them
-  mainWindow.webContents.on('before-input-event', (event, input) => {
+  // 2. THE ULTIMATE WIRETAP: Catch keys before Chromium processes them
+  mainWindow.webContents.on('before-input-event', (_event, input) => {
     console.log(`\n⌨️ [MAIN WIRETAP] Key Detected: "${input.key}"`)
     console.log(`   ├─ Event Type: ${input.type}`)
     console.log(`   ├─ Is Window Focused?: ${mainWindow.isFocused()}`)
