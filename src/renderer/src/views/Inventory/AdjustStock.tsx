@@ -1,6 +1,14 @@
 // src/renderer/src/views/Inventory/AdjustStock.tsx
-import React, { useState, useEffect, useMemo } from 'react'
-import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
+import { useState, useEffect, useMemo } from 'react'
+import Swal from 'sweetalert2'
+import {
+  FiSearch,
+  FiAlertTriangle,
+  FiHash,
+  FiFileText,
+  FiClock,
+  FiTrendingDown
+} from 'react-icons/fi'
 import { Product, Category } from '../../types/models'
 import styles from './AdjustStock.module.css'
 
@@ -72,23 +80,22 @@ export default function AdjustStock() {
   const handleAdjustStock = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // 🚀 FIXED: Call Swal, then return void
     if (!selectedProduct || !selectedBatchId) {
-      Swal.fire('Missing Info', 'Select a product and a batch.', 'warning')
+      Swal.fire('Missing Information', 'Please select a product and a specific batch.', 'warning')
       return
     }
 
     const qty = parseFloat(qtyToRemove)
     if (isNaN(qty) || qty <= 0) {
-      Swal.fire('Invalid Quantity', 'Enter a valid quantity greater than 0.', 'error')
+      Swal.fire('Invalid Quantity', 'Please enter a valid quantity greater than 0.', 'error')
       return
     }
 
-    const wholeUnits = ['Pcs', 'Box', 'Set']
+    const wholeUnits = ['Pcs', 'Box', 'Set', 'Pack', 'Pair', 'Dozen', 'Roll']
     if (wholeUnits.includes(selectedProduct.Unit) && qty % 1 !== 0) {
       Swal.fire(
         'Invalid Quantity',
-        `You cannot remove partial quantities (${qty}) for items measured in ${selectedProduct.Unit}. Must be a whole number.`,
+        `Partial quantities (${qty}) are not allowed for items measured in ${selectedProduct.Unit}.`,
         'error'
       )
       return
@@ -97,8 +104,8 @@ export default function AdjustStock() {
     const safeNote = note.trim()
     if (reason === '1' && safeNote.length < 5) {
       Swal.fire(
-        'Security Requirement',
-        'You must provide a clear reason/note (at least 5 characters) explaining why this item is being marked as Lost or Damaged.',
+        'Note Required',
+        'You must provide a clear explanation (at least 5 characters) for lost or damaged items.',
         'warning'
       )
       return
@@ -110,20 +117,20 @@ export default function AdjustStock() {
     if (qty > batch.RemainingQuantity) {
       Swal.fire(
         'Insufficient Stock',
-        `Cannot remove ${qty}. Only ${batch.RemainingQuantity} left in this batch.`,
+        `Only ${batch.RemainingQuantity} units left in this batch.`,
         'error'
       )
       return
     }
 
     const confirmResult = await Swal.fire({
-      title: '🚨 WARNING: Permanent Action',
-      text: `You are about to permanently remove ${qty} ${selectedProduct.Unit} of ${selectedProduct.Name} from the system.\n\nFinancial Loss: Rs ${(qty * batch.CostPrice).toFixed(2)}`,
+      title: 'Confirm Removal',
+      text: `Permanently remove ${qty} ${selectedProduct.Unit} of ${selectedProduct.Name}? Financial Loss: Rs ${(qty * batch.CostPrice).toFixed(2)}`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, remove stock!'
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, remove stock'
     })
 
     if (confirmResult.isConfirmed) {
@@ -139,12 +146,20 @@ export default function AdjustStock() {
         // @ts-ignore
         await window.api.adjustStock(payload)
 
-        Swal.fire('Success!', 'Stock removed successfully. Financial records updated.', 'success')
+        Swal.fire(
+          'Adjustment Complete',
+          'Stock successfully removed and records updated.',
+          'success'
+        )
 
         loadBaseData()
         handleSelectProduct(selectedProduct)
       } catch (err: any) {
-        Swal.fire('Error', err.message || 'Error adjusting stock.', 'error')
+        Swal.fire(
+          'Adjustment Error',
+          err.message || 'An error occurred while adjusting stock.',
+          'error'
+        )
       }
     }
   }
@@ -178,13 +193,16 @@ export default function AdjustStock() {
       {/* --- LEFT SIDEBAR --- */}
       <div className={styles.leftSidebar}>
         <div className={styles.searchHeader}>
-          <input
-            type="text"
-            className={styles.searchInput}
-            placeholder="Search products..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+          <div className={styles.inputWrapper}>
+            <FiSearch className={styles.inputIcon} />
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
           <select
             className={styles.categorySelect}
             value={selectedCatId || ''}
@@ -215,11 +233,6 @@ export default function AdjustStock() {
               </div>
             </div>
           ))}
-          {displayedProducts.length === 0 && (
-            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              No products found.
-            </div>
-          )}
         </div>
       </div>
 
@@ -227,50 +240,31 @@ export default function AdjustStock() {
       <div className={styles.mainArea}>
         {!selectedProduct ? (
           <div className={styles.emptyPanel}>
-            <h2>Select a product from the list to adjust stock.</h2>
+            <h2>Select a product from the list to begin adjustment.</h2>
           </div>
         ) : (
           <>
             <div className={styles.panel}>
               <div className={styles.productHeader}>
                 <div>
-                  <h2 className={styles.productTitle}>{selectedProduct.Name}</h2>
-                  <div
-                    style={{
-                      fontSize: '13px',
-                      color: 'var(--text-muted)',
-                      marginTop: '4px',
-                      fontFamily: 'monospace'
-                    }}
-                  >
+                  <h2 className={styles.pageTitle}>{selectedProduct.Name}</h2>
+                  <div className={styles.productSubHeader}>
                     CODE: {selectedProduct.Barcode || 'N/A'}
                   </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div
-                    style={{
-                      fontSize: '12px',
-                      fontWeight: 800,
-                      color: 'var(--text-muted)',
-                      textTransform: 'uppercase'
-                    }}
-                  >
-                    Total System Stock
-                  </div>
-                  <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--primary)' }}>
-                    {selectedProduct.Quantity}{' '}
-                    <span
-                      style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 'normal' }}
-                    >
-                      {selectedProduct.Unit}
-                    </span>
+                <div className={styles.totalStockBox}>
+                  <div className={styles.statLabel}>Current System Stock</div>
+                  <div className={styles.statValue}>
+                    {selectedProduct.Quantity} <span>{selectedProduct.Unit}</span>
                   </div>
                 </div>
               </div>
 
               <form onSubmit={handleAdjustStock} className={styles.formGrid}>
                 <div className={styles.formGroup} style={{ gridColumn: 'span 2' }}>
-                  <label>1. Select Batch to Reduce</label>
+                  <label>
+                    <FiHash /> 1. Select Batch to Reduce
+                  </label>
                   <select
                     className={styles.classicInput}
                     value={selectedBatchId}
@@ -280,7 +274,7 @@ export default function AdjustStock() {
                     <option value="">-- Choose specific batch --</option>
                     {activeBatches.map((b: any) => (
                       <option key={b.Id} value={b.Id}>
-                        Current Qty: {b.RemainingQuantity} | Rec:{' '}
+                        Available: {b.RemainingQuantity} | Rec:{' '}
                         {new Date(b.ReceivedDate).toLocaleDateString()} | Cost: Rs{' '}
                         {b.CostPrice.toFixed(2)}
                       </option>
@@ -289,8 +283,10 @@ export default function AdjustStock() {
                 </div>
 
                 <div className={styles.formGroup}>
-                  <label>2. Qty to Remove</label>
-                  <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                  <label>
+                    <FiTrendingDown /> 2. Qty to Remove
+                  </label>
+                  <div className={styles.qtyInputWrapper}>
                     <input
                       type="text"
                       className={styles.classicInput}
@@ -302,16 +298,15 @@ export default function AdjustStock() {
                       }}
                       required
                       placeholder="0"
-                      style={{ width: '100%' }}
                     />
-                    <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-muted)' }}>
-                      {selectedProduct.Unit}
-                    </span>
+                    <span className={styles.unitLabel}>{selectedProduct.Unit}</span>
                   </div>
                 </div>
 
                 <div className={styles.formGroup}>
-                  <label>3. Reason</label>
+                  <label>
+                    <FiAlertTriangle /> 3. Reason
+                  </label>
                   <select
                     className={styles.classicInput}
                     value={reason}
@@ -324,8 +319,8 @@ export default function AdjustStock() {
 
                 <div className={styles.formGroup} style={{ gridColumn: 'span 3' }}>
                   <label>
-                    4. Explanation Note{' '}
-                    {reason === '1' && <span style={{ color: 'var(--danger)' }}>(Required)</span>}
+                    <FiFileText /> 4. Adjustment Note{' '}
+                    {reason === '1' && <span className={styles.requiredMark}>*</span>}
                   </label>
                   <input
                     type="text"
@@ -334,8 +329,8 @@ export default function AdjustStock() {
                     onChange={(e) => setNote(e.target.value)}
                     placeholder={
                       reason === '1'
-                        ? 'Explain exactly how this was lost or damaged...'
-                        : 'Optional note...'
+                        ? 'Enter required explanation...'
+                        : 'Optional correction note...'
                     }
                     required={reason === '1'}
                   />
@@ -346,7 +341,7 @@ export default function AdjustStock() {
                   className={styles.dangerBtn}
                   disabled={!selectedBatchId || activeBatches.length === 0}
                 >
-                  ⚠️ REMOVE STOCK
+                  REMOVE FROM STOCK
                 </button>
               </form>
             </div>
@@ -355,97 +350,56 @@ export default function AdjustStock() {
               className={styles.panel}
               style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '15px'
-                }}
-              >
-                <h3 className={styles.tableHeader} style={{ margin: 0 }}>
-                  Adjustment & Loss History
-                </h3>
-
+              <div className={styles.historyHeader}>
+                <h3 className={styles.tableTitle}>ADJUSTMENT & LOSS HISTORY</h3>
                 {adjustmentHistory.length > 0 && (
-                  <div style={{ display: 'flex', gap: '20px' }}>
-                    <div style={{ textAlign: 'right' }}>
-                      <div
-                        style={{
-                          fontSize: '11px',
-                          fontWeight: 800,
-                          color: 'var(--text-muted)',
-                          textTransform: 'uppercase'
-                        }}
-                      >
-                        Total Units Lost
-                      </div>
-                      <div style={{ fontSize: '16px', fontWeight: 900, color: 'var(--text-main)' }}>
+                  <div className={styles.lossSummary}>
+                    <div className={styles.summaryItem}>
+                      <span className={styles.summaryLabel}>Units Lost</span>
+                      <span className={styles.summaryValueSmall}>
                         {totalUnitsLost.toFixed(2)} {selectedProduct.Unit}
-                      </div>
+                      </span>
                     </div>
-                    <div
-                      style={{
-                        textAlign: 'right',
-                        paddingLeft: '20px',
-                        borderLeft: '1px solid var(--border-color)'
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: '11px',
-                          fontWeight: 800,
-                          color: 'var(--text-muted)',
-                          textTransform: 'uppercase'
-                        }}
-                      >
-                        Financial Loss
-                      </div>
-                      <div style={{ fontSize: '16px', fontWeight: 900, color: 'var(--danger)' }}>
+                    <div className={styles.summaryItem}>
+                      <span className={styles.summaryLabel}>Financial Loss</span>
+                      <span className={styles.summaryValueDanger}>
                         Rs {totalFinancialLoss.toFixed(2)}
-                      </div>
+                      </span>
                     </div>
                   </div>
                 )}
               </div>
 
-              <div
-                style={{
-                  flex: 1,
-                  overflowY: 'auto',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '8px'
-                }}
-              >
+              <div className={styles.tableWrapper}>
                 <table className={styles.classicTable}>
                   <thead>
                     <tr>
-                      <th>Date</th>
-                      <th>Type</th>
-                      <th style={{ textAlign: 'center' }}>Qty Removed</th>
-                      <th style={{ textAlign: 'right' }}>Financial Value</th>
-                      <th>Note / Details</th>
+                      <th>
+                        <FiClock /> DATE
+                      </th>
+                      <th>TYPE</th>
+                      <th style={{ textAlign: 'center' }}>QTY IMPACT</th>
+                      <th style={{ textAlign: 'right' }}>VALUE LOSS</th>
+                      <th>NOTES</th>
                     </tr>
                   </thead>
                   <tbody>
                     {adjustmentHistory.length === 0 ? (
                       <tr>
-                        <td
-                          colSpan={5}
-                          style={{
-                            textAlign: 'center',
-                            padding: '40px',
-                            color: 'var(--text-muted)',
-                            fontWeight: 600
-                          }}
-                        >
-                          No manual adjustments recorded for this product.
+                        <td colSpan={5} className={styles.emptyMsg}>
+                          No adjustment records found for this product.
                         </td>
                       </tr>
                     ) : (
                       adjustmentHistory.map((adj: any) => (
                         <tr key={adj.Id}>
-                          <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
+                          <td
+                            style={{
+                              color: 'var(--text-muted)',
+                              fontSize: '13px',
+                              fontWeight: 600
+                            }}
+                          >
                             {new Date(adj.Date).toLocaleString()}
                           </td>
                           <td>
@@ -457,21 +411,9 @@ export default function AdjustStock() {
                               {adj.Reason === 0 ? 'Correction' : 'Lost / Damaged'}
                             </span>
                           </td>
-                          <td
-                            style={{
-                              fontWeight: 900,
-                              color: 'var(--text-main)',
-                              textAlign: 'center'
-                            }}
-                          >
+                          <td style={{ fontWeight: 900, textAlign: 'center' }}>
                             - {adj.Quantity}{' '}
-                            <span
-                              style={{
-                                fontSize: '11px',
-                                color: 'var(--text-muted)',
-                                fontWeight: 'normal'
-                              }}
-                            >
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                               {selectedProduct.Unit}
                             </span>
                           </td>

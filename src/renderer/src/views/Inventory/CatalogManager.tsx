@@ -1,6 +1,21 @@
 // src/renderer/src/views/Inventory/CatalogManager.tsx
-import React, { useState, useEffect, useMemo } from 'react'
-import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
+import { useState, useEffect, useMemo } from 'react'
+import Swal from 'sweetalert2'
+import {
+  FiSearch,
+  FiFolder,
+  FiFolderMinus,
+  FiChevronRight,
+  FiChevronDown,
+  FiBox,
+  FiEye,
+  FiX,
+  FiEdit2,
+  FiTrash2,
+  FiFolderPlus,
+  FiPlusSquare,
+  FiArrowLeft
+} from 'react-icons/fi'
 import { Category, Product } from '../../types/models'
 import styles from './CatalogManager.module.css'
 
@@ -35,9 +50,11 @@ export default function CatalogManager() {
   const loadData = async () => {
     try {
       // @ts-ignore
-      setCategories(await window.api.getCategories())
+      const catData = await window.api.getCategories()
       // @ts-ignore
-      setProducts(await window.api.getProducts())
+      const prodData = await window.api.getProducts()
+      setCategories(catData || [])
+      setProducts(prodData || [])
     } catch (err) {
       console.error('Data load failed', err)
     }
@@ -59,7 +76,6 @@ export default function CatalogManager() {
     const hasProducts = products.some((p) => p.CategoryId === id)
 
     if (hasSubFolders || hasProducts) {
-      // 🚀 FIXED: Call Swal, then return
       Swal.fire(
         'Action Denied',
         'This folder is not empty!\n\nYou must move or delete all products and sub-folders inside it before deleting. This protects your database history.',
@@ -73,9 +89,9 @@ export default function CatalogManager() {
       text: 'Do you want to delete this empty folder?',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete it!'
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, delete it'
     })
 
     if (confirmResult.isConfirmed) {
@@ -96,8 +112,8 @@ export default function CatalogManager() {
       text: 'Are you sure you want to remove this product from the catalog?\n\n(Note: Past sales history for this item will be safely preserved.)',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
       confirmButtonText: 'Yes, delete product'
     })
 
@@ -127,11 +143,9 @@ export default function CatalogManager() {
   // --- ACTIONS: CREATION ---
   const handleSaveFolder = async (e: React.FormEvent) => {
     e.preventDefault()
-
     const safeName = newItemName.trim()
     if (!safeName) {
-      // 🚀 FIXED: Call Swal, then return
-      Swal.fire('Error', 'Folder name cannot be empty or just spaces.', 'error')
+      Swal.fire('Error', 'Folder name cannot be empty.', 'error')
       return
     }
 
@@ -144,8 +158,8 @@ export default function CatalogManager() {
     } catch (err: any) {
       if (err.message && err.message.includes('UNIQUE constraint failed')) {
         Swal.fire(
-          'Duplicate',
-          'A folder with this name already exists in your catalog. Please choose a different name.',
+          'Duplicate Entry',
+          'A folder with this name already exists in your catalog.',
           'warning'
         )
       } else {
@@ -157,15 +171,13 @@ export default function CatalogManager() {
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedFolderId) {
-      // 🚀 FIXED: Call Swal, then return
       Swal.fire('Action Required', 'You must be inside a folder to create a product.', 'warning')
       return
     }
 
     const safeName = newItemName.trim()
     if (!safeName) {
-      // 🚀 FIXED: Call Swal, then return
-      Swal.fire('Error', 'Product name cannot be empty or just spaces.', 'error')
+      Swal.fire('Error', 'Product name cannot be empty.', 'error')
       return
     }
 
@@ -192,7 +204,7 @@ export default function CatalogManager() {
     } catch (err: any) {
       if (err.message && err.message.includes('UNIQUE constraint failed')) {
         Swal.fire(
-          'Duplicate',
+          'Duplicate Entry',
           'A product with this name already exists in your catalog.',
           'warning'
         )
@@ -218,7 +230,6 @@ export default function CatalogManager() {
 
     const safeName = editFolderName.trim()
     if (!safeName) {
-      // 🚀 FIXED: Call Swal, then return
       Swal.fire('Error', 'Folder name cannot be empty.', 'error')
       return
     }
@@ -230,11 +241,7 @@ export default function CatalogManager() {
       loadData()
     } catch (err: any) {
       if (err.message && err.message.includes('UNIQUE constraint failed')) {
-        Swal.fire(
-          'Duplicate',
-          'A folder with this name already exists. Please choose a different name.',
-          'warning'
-        )
+        Swal.fire('Duplicate Entry', 'A folder with this name already exists.', 'warning')
       } else {
         Swal.fire('Error', 'Error updating folder: ' + err.message, 'error')
       }
@@ -254,7 +261,6 @@ export default function CatalogManager() {
 
     const safeName = editProdName.trim()
     if (!safeName) {
-      // 🚀 FIXED: Call Swal, then return
       Swal.fire('Error', 'Product name cannot be empty.', 'error')
       return
     }
@@ -273,7 +279,7 @@ export default function CatalogManager() {
     } catch (err: any) {
       if (err.message && err.message.includes('UNIQUE constraint failed')) {
         Swal.fire(
-          'Duplicate',
+          'Duplicate Entry',
           'A product with this name already exists in your catalog.',
           'warning'
         )
@@ -316,9 +322,19 @@ export default function CatalogManager() {
                   }
                 }}
               >
-                {hasChildren ? (isExpanded ? '▼' : '▶') : ''}
+                {hasChildren ? (
+                  isExpanded ? (
+                    <FiChevronDown size={14} />
+                  ) : (
+                    <FiChevronRight size={14} />
+                  )
+                ) : (
+                  <span style={{ width: '14px', display: 'inline-block' }}></span>
+                )}
               </span>
-              <span className={styles.folderIcon}>{isExpanded ? '📂' : '📁'}</span>
+              <span className={styles.folderIcon}>
+                {isExpanded ? <FiFolderMinus size={16} /> : <FiFolder size={16} />}
+              </span>
               {cat.Name}
             </div>
             {isExpanded && renderTree(cat.Id, depth + 1)}
@@ -358,30 +374,19 @@ export default function CatalogManager() {
     <div className={styles.container}>
       {/* LAYER 1: FILE EXPLORER (LEFT) */}
       <div className={styles.leftPanel}>
-        <div className={styles.panelHeader}>Explorer</div>
+        <div className={styles.panelHeader}>CATALOG FOLDERS</div>
         <div className={styles.treeContainer}>{treeContent}</div>
       </div>
 
       {/* LAYER 2: CONTENTS (RIGHT) */}
       <div className={styles.rightPanel}>
+        <h2 className={styles.pageTitle}>CATALOG MANAGER</h2>
+
         <div className={styles.rightHeader}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             {!globalSearch && selectedFolderId !== null && (
               <button className={styles.backBtn} onClick={handleBack}>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="19" y1="12" x2="5" y2="12"></line>
-                  <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>{' '}
-                Back
+                <FiArrowLeft size={16} /> Back
               </button>
             )}
             <div className={styles.breadcrumb}>
@@ -390,22 +395,25 @@ export default function CatalogManager() {
           </div>
 
           <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-            <input
-              type="text"
-              className={styles.globalSearch}
-              placeholder="Search entire catalog..."
-              value={globalSearch}
-              onChange={(e) => {
-                setGlobalSearch(e.target.value)
-                if (e.target.value) setSelectedFolderId(null)
-              }}
-            />
+            <div className={styles.searchWrapper}>
+              <FiSearch className={styles.searchIcon} />
+              <input
+                type="text"
+                className={styles.globalSearch}
+                placeholder="Search entire catalog..."
+                value={globalSearch}
+                onChange={(e) => {
+                  setGlobalSearch(e.target.value)
+                  if (e.target.value) setSelectedFolderId(null)
+                }}
+              />
+            </div>
             <button
               className={styles.addBtn}
               onClick={() => setModalView('CHOICE')}
               disabled={!!globalSearch}
             >
-              <span style={{ fontSize: '18px' }}>+</span> ADD NEW
+              <FiPlusSquare size={18} /> ADD NEW
             </button>
           </div>
         </div>
@@ -416,7 +424,7 @@ export default function CatalogManager() {
               <tr>
                 <th>TYPE & NAME</th>
                 <th>INFO</th>
-                <th>ACTIONS</th>
+                <th style={{ textAlign: 'right' }}>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
@@ -424,27 +432,33 @@ export default function CatalogManager() {
               {displayedFolders.map((folder) => (
                 <tr key={`cat-${folder.Id}`}>
                   <td style={{ fontWeight: 700 }}>
-                    <span className={styles.rowIcon}>📁</span> {folder.Name}
+                    <span className={styles.rowIcon}>
+                      <FiFolder size={18} />
+                    </span>{' '}
+                    {folder.Name}
                   </td>
                   <td style={{ color: 'var(--text-muted)' }}>Folder</td>
-                  <td>
+                  <td style={{ textAlign: 'right' }}>
                     <button
                       className={`${styles.actionBtn} ${styles.btnOpen}`}
                       onClick={() => setSelectedFolderId(folder.Id)}
+                      title="Open Folder"
                     >
                       OPEN
                     </button>
                     <button
                       className={`${styles.actionBtn} ${styles.btnEdit}`}
                       onClick={() => openEditFolder(folder)}
+                      title="Edit Folder"
                     >
-                      EDIT
+                      <FiEdit2 size={16} />
                     </button>
                     <button
                       className={`${styles.actionBtn} ${styles.btnDel}`}
                       onClick={() => handleDeleteFolder(folder.Id)}
+                      title="Delete Folder"
                     >
-                      DEL
+                      <FiTrash2 size={16} />
                     </button>
                   </td>
                 </tr>
@@ -453,8 +467,11 @@ export default function CatalogManager() {
               {/* Products */}
               {displayedProducts.map((prod) => (
                 <tr key={`prod-${prod.Id}`}>
-                  <td style={{ fontWeight: 500 }}>
-                    <span className={styles.rowIcon}>📦</span> {prod.Name}
+                  <td style={{ fontWeight: 600 }}>
+                    <span className={styles.rowIcon}>
+                      <FiBox size={18} />
+                    </span>{' '}
+                    {prod.Name}
                   </td>
                   <td style={{ color: 'var(--text-muted)' }}>
                     {globalSearch && (
@@ -466,24 +483,27 @@ export default function CatalogManager() {
                     )}
                     SKU: {prod.Barcode} | {prod.Unit}
                   </td>
-                  <td>
+                  <td style={{ textAlign: 'right' }}>
                     <button
                       className={`${styles.actionBtn} ${styles.btnView}`}
                       onClick={() => handleViewProduct(prod)}
+                      title="View Product Batches"
                     >
-                      VIEW
+                      <FiEye size={16} />
                     </button>
                     <button
                       className={`${styles.actionBtn} ${styles.btnEdit}`}
                       onClick={() => openEditProduct(prod)}
+                      title="Edit Product"
                     >
-                      EDIT
+                      <FiEdit2 size={16} />
                     </button>
                     <button
                       className={`${styles.actionBtn} ${styles.btnDel}`}
                       onClick={() => handleDeleteProduct(prod.Id)}
+                      title="Delete Product"
                     >
-                      DEL
+                      <FiTrash2 size={16} />
                     </button>
                   </td>
                 </tr>
@@ -491,10 +511,7 @@ export default function CatalogManager() {
 
               {displayedFolders.length === 0 && displayedProducts.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={3}
-                    style={{ textAlign: 'center', padding: '50px', color: 'var(--text-muted)' }}
-                  >
+                  <td colSpan={3} className={styles.emptyMsg}>
                     {globalSearch
                       ? 'No products match your search.'
                       : "This folder is empty. Click '+ ADD NEW' to create something."}
@@ -513,7 +530,14 @@ export default function CatalogManager() {
         <div className={styles.modalOverlay}>
           <div className={styles.modalBox}>
             <div className={styles.modalHeader}>
-              <h2 style={{ margin: 0, fontSize: '18px' }}>
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: '18px',
+                  color: 'var(--text-main)',
+                  textTransform: 'uppercase'
+                }}
+              >
                 {modalView === 'CHOICE' && 'What do you want to create?'}
                 {modalView === 'FOLDER' && 'Create Sub-Folder'}
                 {modalView === 'PRODUCT' && 'Create Product'}
@@ -525,7 +549,7 @@ export default function CatalogManager() {
                   setNewItemName('')
                 }}
               >
-                ✖
+                <FiX />
               </button>
             </div>
 
@@ -533,7 +557,9 @@ export default function CatalogManager() {
               <div className={styles.modalBody}>
                 <div className={styles.choiceGrid}>
                   <button className={styles.choiceBtn} onClick={() => setModalView('FOLDER')}>
-                    <span className={styles.choiceIcon}>📁</span>
+                    <span className={styles.choiceIcon}>
+                      <FiFolderPlus size={32} />
+                    </span>
                     <span className={styles.choiceTitle}>
                       New Folder
                       <br />
@@ -562,7 +588,9 @@ export default function CatalogManager() {
                       setModalView('PRODUCT')
                     }}
                   >
-                    <span className={styles.choiceIcon}>📦</span>
+                    <span className={styles.choiceIcon}>
+                      <FiBox size={32} />
+                    </span>
                     <span className={styles.choiceTitle}>
                       New Product
                       <br />
@@ -588,6 +616,7 @@ export default function CatalogManager() {
                     <label>Folder Name</label>
                     <input
                       type="text"
+                      className={styles.classicInput}
                       value={newItemName}
                       onChange={(e) => setNewItemName(e.target.value)}
                       required
@@ -596,7 +625,8 @@ export default function CatalogManager() {
                     />
                   </div>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    Will be created inside: <b>{currentFolderName}</b>
+                    Will be created inside:{' '}
+                    <b style={{ color: 'var(--primary)' }}>{currentFolderName}</b>
                   </div>
                 </div>
                 <div className={styles.modalFooter}>
@@ -605,10 +635,10 @@ export default function CatalogManager() {
                     className={styles.cancelBtn}
                     onClick={() => setModalView('CHOICE')}
                   >
-                    Back
+                    BACK
                   </button>
                   <button type="submit" className={styles.saveBtn}>
-                    Save Folder
+                    SAVE FOLDER
                   </button>
                 </div>
               </form>
@@ -624,6 +654,7 @@ export default function CatalogManager() {
                     <label>Product Name</label>
                     <input
                       type="text"
+                      className={styles.classicInput}
                       value={newItemName}
                       onChange={(e) => setNewItemName(e.target.value)}
                       required
@@ -633,13 +664,39 @@ export default function CatalogManager() {
                   </div>
                   <div className={styles.formGroup}>
                     <label>Base Unit</label>
-                    <select value={prodUnit} onChange={(e) => setProdUnit(e.target.value)}>
-                      <option value="Pcs">Pcs</option>
-                      <option value="Box">Box</option>
-                      <option value="Set">Set</option>
-                      <option value="Kg">Kg</option>
-                      <option value="m">m</option>
-                      <option value="L">L</option>
+                    <select
+                      className={styles.classicSelect}
+                      value={prodUnit}
+                      onChange={(e) => setProdUnit(e.target.value)}
+                    >
+                      <optgroup label="General Items">
+                        <option value="Pcs">Pieces (Pcs)</option>
+                        <option value="Box">Box</option>
+                        <option value="Set">Set</option>
+                        <option value="Pack">Pack</option>
+                        <option value="Pair">Pair</option>
+                        <option value="Dozen">Dozen</option>
+                        <option value="Roll">Roll</option>
+                      </optgroup>
+                      <optgroup label="Weight">
+                        <option value="Kg">Kilograms (Kg)</option>
+                        <option value="g">Grams (g)</option>
+                        <option value="mg">Milligrams (mg)</option>
+                      </optgroup>
+                      <optgroup label="Length & Area">
+                        <option value="m">Meters (m)</option>
+                        <option value="cm">Centimeters (cm)</option>
+                        <option value="mm">Millimeters (mm)</option>
+                        <option value="Inches">Inches (in)</option>
+                        <option value="Feet">Feet (ft)</option>
+                        <option value="Sq.m">Square Meters (Sq.m)</option>
+                        <option value="Sq.ft">Square Feet (Sq.ft)</option>
+                      </optgroup>
+                      <optgroup label="Volume">
+                        <option value="L">Liters (L)</option>
+                        <option value="ml">Milliliters (ml)</option>
+                        <option value="Gal">Gallons (Gal)</option>
+                      </optgroup>
                     </select>
                   </div>
                 </div>
@@ -649,10 +706,10 @@ export default function CatalogManager() {
                     className={styles.cancelBtn}
                     onClick={() => setModalView('CHOICE')}
                   >
-                    Back
+                    BACK
                   </button>
                   <button type="submit" className={styles.saveBtn}>
-                    Save Product
+                    SAVE PRODUCT
                   </button>
                 </div>
               </form>
@@ -668,9 +725,18 @@ export default function CatalogManager() {
         <div className={styles.modalOverlay}>
           <div className={styles.modalBox}>
             <div className={styles.modalHeader}>
-              <h2 style={{ margin: 0, fontSize: '18px' }}>Edit Folder</h2>
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: '18px',
+                  color: 'var(--text-main)',
+                  textTransform: 'uppercase'
+                }}
+              >
+                Edit Folder
+              </h2>
               <button className={styles.iconCloseBtn} onClick={() => setEditingFolder(null)}>
-                ✖
+                <FiX />
               </button>
             </div>
             <form onSubmit={handleUpdateFolder}>
@@ -679,6 +745,7 @@ export default function CatalogManager() {
                   <label>Folder Name</label>
                   <input
                     type="text"
+                    className={styles.classicInput}
                     value={editFolderName}
                     onChange={(e) => setEditFolderName(e.target.value)}
                     required
@@ -692,10 +759,10 @@ export default function CatalogManager() {
                   className={styles.cancelBtn}
                   onClick={() => setEditingFolder(null)}
                 >
-                  Cancel
+                  CANCEL
                 </button>
                 <button type="submit" className={styles.saveBtn}>
-                  Update Folder
+                  UPDATE FOLDER
                 </button>
               </div>
             </form>
@@ -710,20 +777,31 @@ export default function CatalogManager() {
         <div className={styles.modalOverlay}>
           <div className={styles.modalBox}>
             <div className={styles.modalHeader}>
-              <h2 style={{ margin: 0, fontSize: '18px' }}>Edit Product Info</h2>
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: '18px',
+                  color: 'var(--text-main)',
+                  textTransform: 'uppercase'
+                }}
+              >
+                Edit Product Info
+              </h2>
               <button className={styles.iconCloseBtn} onClick={() => setEditingProduct(null)}>
-                ✖
+                <FiX />
               </button>
             </div>
             <form onSubmit={handleUpdateProduct}>
               <div className={styles.modalBody}>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '20px' }}>
-                  SKU: <b>{editingProduct.Barcode}</b> (Cannot be changed)
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+                  SKU: <b style={{ color: 'var(--primary)' }}>{editingProduct.Barcode}</b> (Cannot
+                  be changed)
                 </p>
                 <div className={styles.formGroup}>
                   <label>Product Name</label>
                   <input
                     type="text"
+                    className={styles.classicInput}
                     value={editProdName}
                     onChange={(e) => setEditProdName(e.target.value)}
                     required
@@ -732,18 +810,45 @@ export default function CatalogManager() {
                 </div>
                 <div className={styles.formGroup}>
                   <label>Base Unit</label>
-                  <select value={editProdUnit} onChange={(e) => setEditProdUnit(e.target.value)}>
-                    <option value="Pcs">Pcs</option>
-                    <option value="Box">Box</option>
-                    <option value="Set">Set</option>
-                    <option value="Kg">Kg</option>
-                    <option value="m">m</option>
-                    <option value="L">L</option>
+                  <select
+                    className={styles.classicSelect}
+                    value={editProdUnit}
+                    onChange={(e) => setEditProdUnit(e.target.value)}
+                  >
+                    <optgroup label="General Items">
+                      <option value="Pcs">Pieces (Pcs)</option>
+                      <option value="Box">Box</option>
+                      <option value="Set">Set</option>
+                      <option value="Pack">Pack</option>
+                      <option value="Pair">Pair</option>
+                      <option value="Dozen">Dozen</option>
+                      <option value="Roll">Roll</option>
+                    </optgroup>
+                    <optgroup label="Weight">
+                      <option value="Kg">Kilograms (Kg)</option>
+                      <option value="g">Grams (g)</option>
+                      <option value="mg">Milligrams (mg)</option>
+                    </optgroup>
+                    <optgroup label="Length & Area">
+                      <option value="m">Meters (m)</option>
+                      <option value="cm">Centimeters (cm)</option>
+                      <option value="mm">Millimeters (mm)</option>
+                      <option value="Inches">Inches (in)</option>
+                      <option value="Feet">Feet (ft)</option>
+                      <option value="Sq.m">Square Meters (Sq.m)</option>
+                      <option value="Sq.ft">Square Feet (Sq.ft)</option>
+                    </optgroup>
+                    <optgroup label="Volume">
+                      <option value="L">Liters (L)</option>
+                      <option value="ml">Milliliters (ml)</option>
+                      <option value="Gal">Gallons (Gal)</option>
+                    </optgroup>
                   </select>
                 </div>
                 <div className={styles.formGroup}>
                   <label>Move to Folder</label>
                   <select
+                    className={styles.classicSelect}
                     value={editProdFolder}
                     onChange={(e) => setEditProdFolder(Number(e.target.value))}
                   >
@@ -761,10 +866,10 @@ export default function CatalogManager() {
                   className={styles.cancelBtn}
                   onClick={() => setEditingProduct(null)}
                 >
-                  Cancel
+                  CANCEL
                 </button>
                 <button type="submit" className={styles.saveBtn}>
-                  Update Product
+                  UPDATE PRODUCT
                 </button>
               </div>
             </form>
@@ -780,7 +885,14 @@ export default function CatalogManager() {
           <div className={styles.modalBoxView}>
             <div className={styles.modalHeader}>
               <div>
-                <h2 style={{ margin: 0, fontSize: '24px', color: 'var(--text-main)' }}>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: '24px',
+                    color: 'var(--text-main)',
+                    textTransform: 'uppercase'
+                  }}
+                >
                   {viewingProduct.Name}
                 </h2>
                 <div
@@ -798,10 +910,10 @@ export default function CatalogManager() {
               <div
                 style={{
                   textAlign: 'right',
-                  background: 'var(--bg-surface)',
+                  background: '#f8fafc',
                   padding: '10px 20px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)'
+                  borderRadius: '4px',
+                  border: '2px dashed var(--border-color)'
                 }}
               >
                 <div
@@ -826,11 +938,12 @@ export default function CatalogManager() {
             <div className={styles.modalBody}>
               <h3
                 style={{
-                  fontSize: '15px',
+                  fontSize: '14px',
                   marginBottom: '15px',
                   color: 'var(--text-main)',
                   textTransform: 'uppercase',
-                  fontWeight: 800
+                  fontWeight: 900,
+                  letterSpacing: '0.5px'
                 }}
               >
                 Active Inventory Batches (GRN History)
@@ -852,15 +965,7 @@ export default function CatalogManager() {
                   <tbody>
                     {productBatches.length === 0 ? (
                       <tr>
-                        <td
-                          colSpan={8}
-                          style={{
-                            textAlign: 'center',
-                            padding: '50px',
-                            color: 'var(--text-muted)',
-                            fontWeight: 600
-                          }}
-                        >
+                        <td colSpan={8} className={styles.emptyMsg}>
                           No active batches found. Stock is added via GRN.
                         </td>
                       </tr>
@@ -868,6 +973,7 @@ export default function CatalogManager() {
                       productBatches.map((batch, idx) => {
                         const maxDiscountValue = batch.Discount || 0
                         const minAllowedPrice = batch.SellingPrice - maxDiscountValue
+
                         const rawPercent =
                           batch.SellingPrice > 0 ? (maxDiscountValue / batch.SellingPrice) * 100 : 0
                         const discountPercentage =
@@ -875,10 +981,16 @@ export default function CatalogManager() {
 
                         return (
                           <tr key={idx}>
-                            <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
+                            <td
+                              style={{
+                                color: 'var(--text-muted)',
+                                fontSize: '13px',
+                                fontWeight: 600
+                              }}
+                            >
                               {new Date(batch.ReceivedDate).toLocaleDateString()}
                             </td>
-                            <td style={{ fontWeight: 700, color: 'var(--text-main)' }}>
+                            <td style={{ fontWeight: 800, color: 'var(--text-main)' }}>
                               {batch.SupplierName || 'Unknown'}
                             </td>
                             <td style={{ color: 'var(--text-muted)' }}>{batch.InitialQuantity}</td>
@@ -897,7 +1009,7 @@ export default function CatalogManager() {
                             <td style={{ color: 'var(--success)', fontWeight: 800 }}>
                               Rs {batch.SellingPrice.toFixed(2)}
                             </td>
-                            <td style={{ color: 'var(--warning)', fontWeight: 700 }}>
+                            <td style={{ color: 'var(--warning)', fontWeight: 800 }}>
                               {discountPercentage}% (Rs {maxDiscountValue.toFixed(2)})
                             </td>
                             <td>
@@ -915,7 +1027,7 @@ export default function CatalogManager() {
             </div>
 
             <div className={styles.modalFooter}>
-              <button className={styles.closeBtn} onClick={() => setViewingProduct(null)}>
+              <button className={styles.cancelBtn} onClick={() => setViewingProduct(null)}>
                 CLOSE WINDOW
               </button>
             </div>

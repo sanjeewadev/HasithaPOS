@@ -1,6 +1,7 @@
 // src/renderer/src/views/Reports/CreditAccounts.tsx
-import { useState, useEffect, useMemo } from 'react' // 🚀 Removed unused React import
+import { useState, useEffect, useMemo } from 'react'
 import Swal from 'sweetalert2'
+import { FiSearch, FiCreditCard, FiX, FiCheckCircle, FiDollarSign } from 'react-icons/fi'
 import styles from './CreditAccounts.module.css'
 
 export default function CreditAccounts() {
@@ -40,16 +41,14 @@ export default function CreditAccounts() {
 
     const amount = parseFloat(paymentAmount)
     if (isNaN(amount) || amount <= 0) {
-      // 🚀 FIXED: Call Swal, then return
-      Swal.fire('Invalid Amount', 'Enter a valid payment amount greater than 0.', 'warning')
+      Swal.fire('Invalid Amount', 'Please enter a valid payment amount greater than 0.', 'warning')
       return
     }
 
     const safeAmount = parseFloat(amount.toFixed(2))
     const safePending = parseFloat(selectedInvoice.TotalPending.toFixed(2))
 
-    if (safeAmount > safePending) {
-      // 🚀 FIXED: Call Swal, then return
+    if (safeAmount > safePending + 0.01) {
       Swal.fire(
         'Invalid Amount',
         `Payment (Rs ${safeAmount.toFixed(2)}) cannot exceed the total pending debt of Rs ${safePending.toFixed(2)}`,
@@ -59,13 +58,13 @@ export default function CreditAccounts() {
     }
 
     const confirmResult = await Swal.fire({
-      title: 'Process Payment?',
+      title: 'Confirm Payment',
       text: `Process payment of Rs ${safeAmount.toFixed(2)} for Invoice ${selectedInvoice.ReceiptId}?`,
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: '#28a745',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, process it!'
+      confirmButtonColor: '#10b981',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Confirm Payment'
     })
 
     if (confirmResult.isConfirmed) {
@@ -73,7 +72,7 @@ export default function CreditAccounts() {
       try {
         // @ts-ignore
         await window.api.processCreditPayment(selectedInvoice.ReceiptId, safeAmount)
-        Swal.fire('Success!', '✅ Payment successfully applied to invoice!', 'success')
+        Swal.fire('Success', 'Payment successfully applied to invoice.', 'success')
         setSelectedInvoice(null)
         loadInvoices()
       } catch (err: any) {
@@ -100,26 +99,33 @@ export default function CreditAccounts() {
 
   return (
     <div className={styles.container}>
-      {/* --- TOP PANEL --- */}
-      <div className={styles.topPanel}>
-        <div className={styles.headerInfo}>
-          <h2 className={styles.panelTitle}>DEBTORS LEDGER (BY INVOICE)</h2>
-          <input
-            type="text"
-            className={styles.searchInput}
-            placeholder="Search Customer or Invoice ID..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <div className={styles.summaryBox}>
-          <span className={styles.summaryLabel}>Total Market Debt</span>
-          <span className={styles.summaryValueDanger}>Rs {totalSystemDebt.toFixed(2)}</span>
-        </div>
-      </div>
+      {/* 🚀 WRAPPED IN THE UNIFIED MASTER PANEL */}
+      <div className={styles.panel}>
+        <h2 className={styles.pageTitle}>DEBTORS LEDGER & CREDIT ACCOUNTS</h2>
 
-      {/* --- MAIN TABLE --- */}
-      <div className={styles.mainPanel}>
+        {/* --- TOP PANEL CONTROLS --- */}
+        <div className={styles.topControls}>
+          <div className={styles.searchWrapper}>
+            <FiSearch className={styles.searchIcon} />
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder="Search Customer or Invoice ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className={styles.summaryBox}>
+            <span className={styles.summaryLabel}>Total Market Debt</span>
+            <span className={styles.summaryValueDanger}>
+              <FiCreditCard size={18} style={{ marginRight: '8px' }} />
+              Rs {totalSystemDebt.toFixed(2)}
+            </span>
+          </div>
+        </div>
+
+        {/* --- MAIN TABLE --- */}
         <div className={styles.tableWrapper}>
           <table className={styles.classicTable}>
             <thead>
@@ -134,7 +140,6 @@ export default function CreditAccounts() {
               </tr>
             </thead>
             <tbody>
-              {/* 🚀 FIXED: Used the loading state so TypeScript doesn't complain */}
               {loading ? (
                 <tr>
                   <td colSpan={7} className={styles.emptyMsg}>
@@ -152,23 +157,27 @@ export default function CreditAccounts() {
               ) : (
                 displayedInvoices.map((inv, idx) => (
                   <tr key={idx}>
-                    <td>{new Date(inv.TransactionDate).toLocaleDateString()}</td>
+                    <td style={{ fontWeight: 600 }}>
+                      {new Date(inv.TransactionDate).toLocaleDateString()}
+                    </td>
                     <td
                       style={{ fontWeight: 800, fontFamily: 'monospace', color: 'var(--primary)' }}
                     >
                       {inv.ReceiptId}
                     </td>
-                    <td style={{ fontWeight: 800, fontSize: '14px' }}>
+                    <td style={{ fontWeight: 800, fontSize: '15px' }}>
                       {inv.CustomerName || 'Unknown'}
                     </td>
                     <td style={{ color: 'var(--text-muted)' }}>Rs {inv.TotalCredit.toFixed(2)}</td>
-                    <td style={{ color: 'var(--success)' }}>Rs {inv.TotalPaid.toFixed(2)}</td>
+                    <td style={{ color: '#10b981', fontWeight: 700 }}>
+                      Rs {inv.TotalPaid.toFixed(2)}
+                    </td>
                     <td style={{ fontWeight: 900, color: 'var(--danger)', fontSize: '16px' }}>
                       Rs {inv.TotalPending.toFixed(2)}
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <button className={styles.settleBtn} onClick={() => handleOpenSettle(inv)}>
-                        PAY INVOICE
+                        <FiDollarSign size={14} /> PAY INVOICE
                       </button>
                     </td>
                   </tr>
@@ -185,7 +194,7 @@ export default function CreditAccounts() {
           <div className={styles.modalBox}>
             <div className={styles.modalHeader}>
               <div>
-                <h2 style={{ margin: 0, fontSize: '22px' }}>Pay Invoice</h2>
+                <h2 style={{ margin: 0, fontSize: '22px' }}>Settle Invoice Payment</h2>
                 <div
                   style={{
                     fontSize: '13px',
@@ -200,14 +209,22 @@ export default function CreditAccounts() {
                 </div>
               </div>
               <button className={styles.closeIcon} onClick={() => setSelectedInvoice(null)}>
-                ✖
+                <FiX />
               </button>
             </div>
 
             <div className={styles.modalBody}>
               <div className={styles.debtBanner}>
-                <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--danger)' }}>
-                  REMAINING DEBT OWED
+                <div
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: 900,
+                    color: 'var(--danger)',
+                    textTransform: 'uppercase',
+                    marginBottom: '4px'
+                  }}
+                >
+                  Remaining Debt Owed
                 </div>
                 <div style={{ fontSize: '32px', fontWeight: 900, color: 'var(--danger)' }}>
                   Rs {selectedInvoice.TotalPending.toFixed(2)}
@@ -216,7 +233,7 @@ export default function CreditAccounts() {
 
               <form onSubmit={handleProcessPayment} className={styles.paymentForm}>
                 <div className={styles.formGroup}>
-                  <label>Cash Received (Rs)</label>
+                  <label>Cash Amount Received (Rs)</label>
                   <input
                     type="text"
                     inputMode="decimal"
@@ -242,14 +259,14 @@ export default function CreditAccounts() {
                         setPaymentAmount((selectedInvoice.TotalPending / 2).toFixed(2))
                       }
                     >
-                      50% HALF PAY
+                      50% SPLIT
                     </button>
                     <button
                       type="button"
                       className={`${styles.quickPayBtn} ${styles.fullPay}`}
                       onClick={() => setPaymentAmount(selectedInvoice.TotalPending.toFixed(2))}
                     >
-                      100% FULL PAY
+                      <FiCheckCircle size={14} /> FULL PAYMENT
                     </button>
                   </div>
                 </div>

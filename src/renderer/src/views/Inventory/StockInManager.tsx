@@ -1,6 +1,17 @@
 // src/renderer/src/views/Inventory/StockInManager.tsx
 import React, { useState, useEffect, useMemo, useRef } from 'react'
-import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
+import Swal from 'sweetalert2'
+import {
+  FiPackage,
+  FiTruck,
+  FiSearch,
+  FiPlus,
+  FiX,
+  FiTrash2,
+  FiCheckCircle,
+  FiSave,
+  FiAlertTriangle
+} from 'react-icons/fi'
 import { Product, Supplier } from '../../types/models'
 import styles from './StockInManager.module.css'
 
@@ -24,13 +35,13 @@ export default function StockInManager() {
   const [products, setProducts] = useState<Product[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
 
-  // 🚀 Form States
+  // Form States
   const [selectedSupplier, setSelectedSupplier] = useState('')
   const [invoiceNo, setInvoiceNo] = useState('')
-  const [invoiceDate, setInvoiceDate] = useState(() => new Date().toISOString().split('T')[0]) // Default to today
+  const [invoiceDate, setInvoiceDate] = useState(() => new Date().toISOString().split('T')[0])
   const [grnItems, setGrnItems] = useState<GRNItem[]>([])
 
-  // Temporary Input States (Not saved to draft)
+  // Temporary Input States
   const [searchInputValue, setSearchInputValue] = useState('')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null)
@@ -46,7 +57,6 @@ export default function StockInManager() {
   const discRef = useRef<HTMLInputElement>(null)
   const addBtnRef = useRef<HTMLButtonElement>(null)
 
-  // 🚀 INIT: Load Backend Data & Check for Local Storage Drafts
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -60,7 +70,6 @@ export default function StockInManager() {
     }
     loadData()
 
-    // Check for saved draft
     const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY)
     if (savedDraft) {
       try {
@@ -75,22 +84,20 @@ export default function StockInManager() {
     }
   }, [])
 
-  // 🚀 AUTO-SAVE: Every time the main cart or header changes, save it silently!
   useEffect(() => {
     const draftState = { selectedSupplier, invoiceNo, invoiceDate, grnItems }
     localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftState))
   }, [selectedSupplier, invoiceNo, invoiceDate, grnItems])
 
-  // Clear Draft Function - 🚀 REPLACED window.confirm
   const handleClearDraft = async () => {
     const result = await Swal.fire({
-      title: 'Clear Draft?',
-      text: 'Are you sure you want to clear this draft? All scanned items will be lost.',
+      title: 'Clear Current Draft?',
+      text: 'Are you sure you want to clear this draft? All items in the list will be lost.',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, clear it!'
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, clear draft'
     })
 
     if (result.isConfirmed) {
@@ -135,9 +142,8 @@ export default function StockInManager() {
   const handleAddItem = (e: React.FormEvent) => {
     e.preventDefault()
 
-    // 🚀 REPLACED alert
     if (!selectedProductId) {
-      Swal.fire('Missing Product', 'Select a product first!', 'warning')
+      Swal.fire('Selection Required', 'Please select a product from the list first.', 'warning')
       return
     }
 
@@ -150,9 +156,12 @@ export default function StockInManager() {
     if (discPercentNum < 0) discPercentNum = 0
     if (discPercentNum > 100) discPercentNum = 100
 
-    // 🚀 REPLACED alert
     if (!prod || qtyNum <= 0 || buyNum <= 0 || sellNum <= 0) {
-      Swal.fire('Invalid Input', 'Please enter valid quantities and prices.', 'error')
+      Swal.fire(
+        'Invalid Values',
+        'Quantity, Buy Price, and Sell Price must be greater than zero.',
+        'error'
+      )
       return
     }
 
@@ -186,21 +195,23 @@ export default function StockInManager() {
   }
 
   const handleProcessGRN = async () => {
-    // 🚀 REPLACED alert
     if (!selectedSupplier || grnItems.length === 0 || !invoiceNo) {
-      Swal.fire('Missing Details', 'Please complete the Header details and add items.', 'warning')
+      Swal.fire(
+        'Information Missing',
+        'Please select a supplier, enter an invoice number, and add at least one item.',
+        'warning'
+      )
       return
     }
 
-    // 🚀 REPLACED window.confirm
     const confirmResult = await Swal.fire({
-      title: 'Process GRN?',
-      text: `Process GRN for Rs ${totalGRNValue.toFixed(2)}?`,
+      title: 'Process Stock Entry?',
+      text: `Confirm processing of this GRN for Rs ${totalGRNValue.toFixed(2)}?`,
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: '#28a745',
+      confirmButtonColor: '#10b981',
       cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, process it!'
+      confirmButtonText: 'Yes, update inventory'
     })
 
     if (confirmResult.isConfirmed) {
@@ -208,7 +219,7 @@ export default function StockInManager() {
         const payload = {
           SupplierId: parseInt(selectedSupplier),
           ReferenceNo: invoiceNo,
-          InvoiceDate: invoiceDate, // 🚀 NEW: Passing custom date to backend!
+          InvoiceDate: invoiceDate,
           Items: grnItems.map((item) => ({
             ...item,
             qty: parseFloat(item.qty),
@@ -220,18 +231,15 @@ export default function StockInManager() {
         // @ts-ignore
         await window.api.processGRN(payload)
 
-        // 🚀 REPLACED alert
-        Swal.fire('Success!', '✅ GRN Processed Successfully!', 'success')
+        Swal.fire('GRN Processed', 'Inventory has been updated successfully.', 'success')
 
-        // Wipe local storage completely
         localStorage.removeItem(DRAFT_STORAGE_KEY)
         setGrnItems([])
         setSelectedSupplier('')
         setInvoiceNo('')
         setInvoiceDate(new Date().toISOString().split('T')[0])
       } catch (err: any) {
-        // 🚀 REPLACED alert
-        Swal.fire('Error', err.message || 'Error processing GRN.', 'error')
+        Swal.fire('Process Error', err.message || 'Error updating stock database.', 'error')
       }
     }
   }
@@ -243,36 +251,18 @@ export default function StockInManager() {
   return (
     <div className={styles.container}>
       <div className={styles.panel}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '20px',
-            borderBottom: '2px solid var(--bg-canvas)',
-            paddingBottom: '10px'
-          }}
-        >
-          <h2 className={styles.panelTitle} style={{ borderBottom: 'none', margin: 0, padding: 0 }}>
-            1. Receive Details
-          </h2>
+        <div className={styles.headerRow}>
+          <h2 className={styles.pageTitle}>STOCK INTAKE (GRN)</h2>
           {grnItems.length > 0 && (
-            <span
-              style={{
-                fontSize: '12px',
-                fontWeight: 800,
-                color: 'var(--warning)',
-                backgroundColor: '#fffbeb',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                border: '1px solid #fde68a'
-              }}
-            >
-              💾 DRAFT AUTO-SAVED
+            <span className={styles.draftBadge}>
+              <FiSave /> DRAFT AUTO-SAVED
             </span>
           )}
         </div>
 
+        <div className={styles.sectionHeader}>
+          <FiTruck /> 1. VENDOR & INVOICE DETAILS
+        </div>
         <div className={styles.infoGrid}>
           <div className={styles.formGroup}>
             <label>Supplier / Vendor *</label>
@@ -294,7 +284,7 @@ export default function StockInManager() {
             <input
               type="text"
               className={styles.classicInput}
-              placeholder="INV-00123"
+              placeholder="INV-XXXXX"
               value={invoiceNo}
               onChange={(e) => setInvoiceNo(e.target.value)}
             />
@@ -305,7 +295,7 @@ export default function StockInManager() {
               type="date"
               className={styles.classicInput}
               value={invoiceDate}
-              onChange={(e) => setInvoiceDate(e.target.value)} // 🚀 UNLOCKED: Now editable!
+              onChange={(e) => setInvoiceDate(e.target.value)}
               required
             />
           </div>
@@ -313,25 +303,30 @@ export default function StockInManager() {
       </div>
 
       <div className={styles.panel} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <h2 className={styles.panelTitle}>2. Add Products to Stock</h2>
+        <div className={styles.sectionHeader}>
+          <FiPackage /> 2. SCAN OR ADD PRODUCTS
+        </div>
         <form onSubmit={handleAddItem} className={styles.addBarGrid}>
           <div className={styles.formGroup}>
-            <label>Search Product</label>
+            <label>Product Search</label>
             <div className={styles.searchContainer}>
-              <input
-                type="text"
-                className={styles.classicInput}
-                placeholder="Type name..."
-                style={{ width: '100%' }}
-                value={searchInputValue}
-                onChange={(e) => {
-                  setSearchInputValue(e.target.value)
-                  setIsDropdownOpen(true)
-                }}
-                onFocus={() => setIsDropdownOpen(true)}
-                onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
-                onKeyDown={(e) => handleKeyDown(e, qtyRef)}
-              />
+              <div className={styles.inputWrapper}>
+                <FiSearch className={styles.inputIcon} />
+                <input
+                  type="text"
+                  className={styles.classicInput}
+                  placeholder="Type name or scan..."
+                  style={{ paddingLeft: '40px' }}
+                  value={searchInputValue}
+                  onChange={(e) => {
+                    setSearchInputValue(e.target.value)
+                    setIsDropdownOpen(true)
+                  }}
+                  onFocus={() => setIsDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
+                  onKeyDown={(e) => handleKeyDown(e, qtyRef)}
+                />
+              </div>
               {isDropdownOpen && filteredProducts.length > 0 && (
                 <ul className={styles.customDropdown}>
                   {filteredProducts.map((p) => (
@@ -357,6 +352,7 @@ export default function StockInManager() {
               value={inputQty}
               onChange={(e) => setInputQty(e.target.value)}
               onKeyDown={(e) => handleKeyDown(e, buyRef)}
+              placeholder="0"
               required
             />
           </div>
@@ -369,6 +365,7 @@ export default function StockInManager() {
               value={inputBuyPrice}
               onChange={(e) => setInputBuyPrice(e.target.value)}
               onKeyDown={(e) => handleKeyDown(e, sellRef)}
+              placeholder="0.00"
               required
             />
           </div>
@@ -381,11 +378,12 @@ export default function StockInManager() {
               value={inputSellPrice}
               onChange={(e) => setInputSellPrice(e.target.value)}
               onKeyDown={(e) => handleKeyDown(e, discRef)}
+              placeholder="0.00"
               required
             />
           </div>
           <div className={styles.formGroup}>
-            <label>Max Disc %</label>
+            <label>Disc %</label>
             <input
               ref={discRef}
               type="text"
@@ -393,10 +391,11 @@ export default function StockInManager() {
               value={inputDiscountPercent}
               onChange={(e) => setInputDiscountPercent(e.target.value)}
               onKeyDown={(e) => handleKeyDown(e, addBtnRef)}
+              placeholder="0"
             />
           </div>
-          <button ref={addBtnRef} type="submit" className={`${styles.actionBtn} ${styles.addBtn}`}>
-            + ADD
+          <button ref={addBtnRef} type="submit" className={styles.addBtn}>
+            <FiPlus size={18} /> ADD
           </button>
         </form>
 
@@ -409,7 +408,7 @@ export default function StockInManager() {
                 <th>BUY PRICE</th>
                 <th>SELL PRICE</th>
                 <th>MAX DISC</th>
-                <th>PROFIT MARGIN</th>
+                <th>MARGIN</th>
                 <th>LINE TOTAL</th>
                 <th style={{ textAlign: 'center' }}>ACTION</th>
               </tr>
@@ -417,16 +416,8 @@ export default function StockInManager() {
             <tbody>
               {grnItems.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={8}
-                    style={{
-                      textAlign: 'center',
-                      padding: '40px',
-                      color: 'var(--text-muted)',
-                      fontWeight: 600
-                    }}
-                  >
-                    Scan or search products above to build your GRN. Your progress is auto-saved.
+                  <td colSpan={8} className={styles.emptyMsg}>
+                    No items in current entry. Progress is automatically saved as a draft.
                   </td>
                 </tr>
               ) : (
@@ -439,36 +430,35 @@ export default function StockInManager() {
 
                   return (
                     <tr key={item.id} className={isLoss ? styles.lossRow : ''}>
-                      <td style={{ fontWeight: 600 }}>{item.name}</td>
-                      <td style={{ fontWeight: 800 }}>
+                      <td style={{ fontWeight: 800 }}>{item.name}</td>
+                      <td style={{ fontWeight: 900 }}>
                         {item.qty}{' '}
                         <span
                           style={{
                             fontSize: '11px',
-                            color: 'var(--text-muted)',
-                            fontWeight: 'normal'
+                            fontWeight: 'normal',
+                            color: 'var(--text-muted)'
                           }}
                         >
                           {item.unit}
                         </span>
                       </td>
                       <td>Rs {buy.toFixed(2)}</td>
-                      <td style={{ color: 'var(--success)', fontWeight: 600 }}>
+                      <td style={{ color: 'var(--success)', fontWeight: 800 }}>
                         Rs {sell.toFixed(2)}
                       </td>
-                      <td style={{ color: 'var(--warning)', fontWeight: 600 }}>
-                        {item.discountPercent}% (Rs {item.discountAmount.toFixed(2)})
+                      <td style={{ color: '#d97706', fontWeight: 700 }}>{item.discountPercent}%</td>
+                      <td style={{ fontWeight: 800, color: isLoss ? '#ef4444' : '#0284c7' }}>
+                        {profitPercent}% {isLoss && <FiAlertTriangle size={12} />}
                       </td>
-                      <td style={{ fontWeight: 700, color: isLoss ? 'var(--danger)' : '#0ea5e9' }}>
-                        {profitPercent}% {isLoss && '⚠️ LOSS RISK!'}
-                      </td>
-                      <td style={{ fontWeight: 800 }}>Rs {item.total.toFixed(2)}</td>
+                      <td style={{ fontWeight: 900 }}>Rs {item.total.toFixed(2)}</td>
                       <td style={{ textAlign: 'center' }}>
                         <button
-                          className={`${styles.actionBtn} ${styles.removeBtn}`}
+                          className={styles.removeBtn}
                           onClick={() => handleRemoveItem(item.id)}
+                          title="Remove Item"
                         >
-                          ✖
+                          <FiX />
                         </button>
                       </td>
                     </tr>
@@ -479,39 +469,29 @@ export default function StockInManager() {
           </table>
         </div>
 
-        <div className={styles.summaryBox}>
-          <div>
-            <div className={styles.summaryLabel}>Total Items</div>
-            <div style={{ fontSize: '18px', fontWeight: 600 }}>{grnItems.length} Products</div>
+        <div className={styles.summaryFooter}>
+          <div className={styles.totalDisplay}>
+            <span className={styles.totalLabel}>Grand Total GRN Value</span>
+            <span className={styles.totalValue}>Rs {totalGRNValue.toFixed(2)}</span>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <div className={styles.summaryLabel}>Total GRN Value</div>
-            <div className={styles.summaryValue}>Rs {totalGRNValue.toFixed(2)}</div>
-          </div>
-        </div>
 
-        <div style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>
-          {/* 🚀 NEW: Clear Draft Button */}
-          <button
-            type="button"
-            className={styles.actionBtn}
-            style={{
-              border: '2px solid var(--danger)',
-              color: 'var(--danger)',
-              background: 'transparent'
-            }}
-            onClick={handleClearDraft}
-            disabled={grnItems.length === 0 && !selectedSupplier && !invoiceNo}
-          >
-            🗑️ CLEAR DRAFT
-          </button>
-          <button
-            className={`${styles.actionBtn} ${styles.processBtn}`}
-            onClick={handleProcessGRN}
-            style={{ flex: 1, marginTop: 0 }}
-          >
-            ✅ PROCESS GRN & UPDATE INVENTORY
-          </button>
+          <div className={styles.actionGroup}>
+            <button
+              type="button"
+              className={styles.clearBtn}
+              onClick={handleClearDraft}
+              disabled={grnItems.length === 0 && !selectedSupplier && !invoiceNo}
+            >
+              <FiTrash2 /> DISCARD DRAFT
+            </button>
+            <button
+              className={styles.processBtn}
+              onClick={handleProcessGRN}
+              disabled={grnItems.length === 0}
+            >
+              <FiCheckCircle size={18} /> PROCESS GRN & UPDATE INVENTORY
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -17,72 +17,87 @@
   display: flex;
   flex-direction: column;
   padding: 24px 0;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+  border-right: 1px solid rgba(255, 255, 255, 0.05); /* Adds a crisp edge to the dark panel */
   z-index: 10;
 }
 
 .menuHeader {
-  padding: 0 24px 15px 24px;
-  color: var(--sidebar-text);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
+  padding: 0 20px 12px 24px;
+  color: rgba(255, 255, 255, 0.4); /* Subtler header so it doesn't distract from buttons */
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
   text-transform: uppercase;
+  margin-top: 8px;
 }
 
+/* The Navigation Buttons */
 .navButton {
-  padding: 12px 20px;
-  margin: 0 12px 6px 12px;
+  padding: 14px 20px; /* Taller padding for easier clicking on touch screens */
+  margin: 0 12px 4px 12px;
   background: transparent;
   border: none;
-  border-radius: var(--border-radius-md);
-  color: var(--sidebar-text);
+  border-radius: 8px; /* Modern, slightly rounded corners */
+  color: rgba(255, 255, 255, 0.65); /* Muted text for inactive state */
   text-align: left;
-  font-size: 14px;
+  font-size: 15px; /* Larger, clearer text */
   font-weight: 500;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px; /* More breathing room between icon and text */
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); /* Smooth hover effects */
 }
 
 .navButton svg {
-  width: 18px;
-  height: 18px;
-  stroke-width: 2.2px;
+  width: 20px; /* Slightly larger icons to balance the text */
+  height: 20px;
+  stroke-width: 2px;
   transition: all 0.2s ease;
+  opacity: 0.7;
 }
 
+/* Hover State */
 .navButton:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  color: var(--sidebar-text-hover);
+  background-color: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.navButton:hover svg {
+  opacity: 1;
 }
 
 /* ✨ The "Lite" Active State ✨ */
 .activeBtn {
   background-color: rgba(37, 99, 235, 0.15); /* Soft transparent blue */
   color: #ffffff;
-  font-weight: 600;
+  font-weight: 700; /* Bolder text for the active page */
   position: relative;
   overflow: hidden;
 }
 
+.activeBtn svg {
+  opacity: 1;
+  color: var(--primary); /* Makes the icon pop with your primary blue */
+}
+
+/* The sleek side-indicator line */
 .activeBtn::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  height: 16px;
-  width: 3px;
+  top: 15%;
+  bottom: 15%; /* Stretches dynamically based on button height */
+  width: 4px; /* Slightly thicker */
   background-color: var(--primary);
-  border-radius: 2px;
+  border-radius: 0 4px 4px 0; /* Curves the right side of the line */
 }
 
 /* The Content Area */
 .contentArea {
   flex: 1;
-  padding: 8px;
+  padding: 8px; /* Added slightly more padding to frame the workspaces better */
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -92,9 +107,11 @@
 .modernCard {
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-sm);
-  flex: 1; /* Tells the card to fill the remaining space */
+  border-radius: 12px; /* Modernized radius */
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -1px rgba(0, 0, 0, 0.03); /* Softer, more professional shadow */
+  flex: 1;
   padding: 30px;
   display: flex;
   flex-direction: column;

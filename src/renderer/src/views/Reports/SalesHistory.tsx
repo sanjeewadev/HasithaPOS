@@ -1,6 +1,7 @@
 // src/renderer/src/views/Reports/SalesHistory.tsx
-import { useState, useEffect, useMemo } from 'react' // 🚀 Removed unused React import
+import { useState, useEffect, useMemo } from 'react'
 import Swal from 'sweetalert2'
+import { FiSearch, FiEye, FiPrinter, FiX } from 'react-icons/fi'
 import styles from './SalesHistory.module.css'
 
 export default function SalesHistory() {
@@ -20,13 +21,14 @@ export default function SalesHistory() {
   const [viewingReceipt, setViewingReceipt] = useState<any | null>(null)
   const [receiptItems, setReceiptItems] = useState<any[]>([])
 
-  const loadSalesHistory = async (e?: React.FormEvent) => {
+  // 🚀 FIX: Added 'overrideQuery' to safely fetch data without the hidden button hack
+  const loadSalesHistory = async (e?: React.FormEvent, overrideQuery?: string) => {
     if (e) e.preventDefault()
     setLoading(true)
     try {
+      const queryToUse = overrideQuery !== undefined ? overrideQuery : searchQuery
       // @ts-ignore
-      // IMPORTANT: Ensure your backend adds ' 23:59:59' to the endDate to capture the full last day!
-      const data = await window.api.getSalesHistory(startDate, endDate, searchQuery.trim())
+      const data = await window.api.getSalesHistory(startDate, endDate, queryToUse.trim())
       setSales(data || [])
     } catch (err: any) {
       console.error('Failed to load sales history', err)
@@ -38,7 +40,7 @@ export default function SalesHistory() {
 
   useEffect(() => {
     loadSalesHistory()
-  }, [startDate, endDate]) // 🚀 NEW: Auto-reload when dates change!
+  }, [startDate, endDate])
 
   const handleViewItems = async (txn: any) => {
     setViewingReceipt(txn)
@@ -52,9 +54,7 @@ export default function SalesHistory() {
     }
   }
 
-  // 🚀 FIXED: Completely removed the unused handleVoidSale function!
-
-  // 🚀 Helper to render accurate Status Badges
+  // Helper to render accurate Status Badges
   const renderStatusBadge = (status: number) => {
     switch (status) {
       case 0:
@@ -80,7 +80,6 @@ export default function SalesHistory() {
     return { validSales, voidedSales }
   }, [sales])
 
-  // 🚀 FIXED MATH BUG: Uses UnitCost (which stores Original Price)
   const totalSavings = receiptItems.reduce((sum, item) => {
     const original = item.UnitCost || item.UnitPrice
     return sum + Math.max(0, original - item.UnitPrice) * item.Quantity
@@ -88,67 +87,65 @@ export default function SalesHistory() {
 
   return (
     <div className={styles.container}>
-      {/* --- TOP: FILTER & SUMMARY BAR --- */}
-      <div className={styles.topPanel}>
-        <form onSubmit={loadSalesHistory} className={styles.filterGroup}>
-          <div className={styles.dateFilters}>
-            <label>From:</label>
-            <input
-              type="date"
-              className={styles.dateInput}
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              required
-            />
-            <label>To:</label>
-            <input
-              type="date"
-              className={styles.dateInput}
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              required
-            />
-            <button type="submit" className={styles.loadBtn} disabled={loading}>
-              {loading ? 'LOADING...' : 'LOAD DATA'}
-            </button>
-          </div>
-          <input
-            type="text"
-            className={styles.searchInput}
-            placeholder="Optional: Search by Receipt ID or Customer Name..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value)
-              // Automatically trigger a search if they clear the box
-              if (e.target.value === '') {
-                setTimeout(() => {
-                  document.getElementById('searchFormBtn')?.click()
-                }, 100)
-              }
-            }}
-          />
-          {/* Hidden button to allow auto-triggering search when input clears */}
-          <button id="searchFormBtn" type="submit" style={{ display: 'none' }}></button>
-        </form>
+      {/* 🚀 ALL CONTENT WRAPPED IN THE UNIFIED WHITE PANEL */}
+      <div className={styles.panel}>
+        <h2 className={styles.pageTitle}>SALES LEDGER & HISTORY</h2>
 
-        <div className={styles.summaryGroup}>
-          <div className={styles.summaryBox}>
-            <span className={styles.summaryLabel}>Valid Sales (Period)</span>
-            <span className={styles.summaryValueSuccess}>
-              Rs {periodTotals.validSales.toFixed(2)}
-            </span>
-          </div>
-          <div className={styles.summaryBox}>
-            <span className={styles.summaryLabel}>Voided (Period)</span>
-            <span className={styles.summaryValueDanger}>
-              Rs {periodTotals.voidedSales.toFixed(2)}
-            </span>
+        <div className={styles.topControls}>
+          <form onSubmit={loadSalesHistory} className={styles.filterGroup}>
+            <div className={styles.dateFilters}>
+              <label>From:</label>
+              <input
+                type="date"
+                className={styles.classicInput}
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                required
+              />
+              <label>To:</label>
+              <input
+                type="date"
+                className={styles.classicInput}
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                required
+              />
+              <button type="submit" className={styles.loadBtn} disabled={loading}>
+                <FiSearch size={16} /> {loading ? 'LOADING...' : 'LOAD DATA'}
+              </button>
+            </div>
+
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder="Search by Receipt ID or Customer Name..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                // 🚀 FIX: Safely call the API directly instead of hacking the DOM
+                if (e.target.value === '') {
+                  loadSalesHistory(undefined, '')
+                }
+              }}
+            />
+          </form>
+
+          <div className={styles.summaryGroup}>
+            <div className={styles.summaryBox}>
+              <span className={styles.summaryLabel}>Valid Sales (Period)</span>
+              <span className={styles.summaryValueSuccess}>
+                Rs {periodTotals.validSales.toFixed(2)}
+              </span>
+            </div>
+            <div className={styles.summaryBox}>
+              <span className={styles.summaryLabel}>Voided (Period)</span>
+              <span className={styles.summaryValueDanger}>
+                Rs {periodTotals.voidedSales.toFixed(2)}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* --- BOTTOM: MAIN TABLE --- */}
-      <div className={styles.mainPanel}>
         <div className={styles.tableWrapper}>
           <table className={styles.classicTable}>
             <thead>
@@ -198,7 +195,7 @@ export default function SalesHistory() {
                     <td>{renderStatusBadge(s.Status)}</td>
                     <td style={{ textAlign: 'right' }}>
                       <button className={styles.viewBtn} onClick={() => handleViewItems(s)}>
-                        VIEW DETAILS
+                        <FiEye size={14} /> VIEW DETAILS
                       </button>
                     </td>
                   </tr>
@@ -209,7 +206,7 @@ export default function SalesHistory() {
         </div>
       </div>
 
-      {/* --- 🚀 BIG PANEL: RECEIPT DETAILS MODAL --- */}
+      {/* --- RECEIPT DETAILS MODAL --- */}
       {viewingReceipt && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalBoxMassive}>
@@ -231,7 +228,7 @@ export default function SalesHistory() {
                 </div>
               </div>
               <button className={styles.closeIcon} onClick={() => setViewingReceipt(null)}>
-                ✖
+                <FiX />
               </button>
             </div>
 
@@ -260,7 +257,6 @@ export default function SalesHistory() {
                     </tr>
                   ) : (
                     receiptItems.map((item, idx) => {
-                      // 🚀 FIXED: Using UnitCost for original retail price
                       const original = item.UnitCost || item.UnitPrice
                       const discountPerUnit = Math.max(0, original - item.UnitPrice)
                       const hasDiscount = discountPerUnit > 0
@@ -328,7 +324,7 @@ export default function SalesHistory() {
                 <div className={styles.summaryLeft}>
                   {totalSavings > 0 && (
                     <div className={styles.savingsTag}>
-                      ⚡ Customer Saved: Rs {totalSavings.toFixed(2)}
+                      Customer Saved: Rs {totalSavings.toFixed(2)}
                     </div>
                   )}
                   <div style={{ marginTop: '10px', fontSize: '13px', color: 'var(--text-muted)' }}>
@@ -366,7 +362,9 @@ export default function SalesHistory() {
             </div>
 
             <div className={styles.modalFooter}>
-              <button className={styles.printBtn}>🖨️ REPRINT RECEIPT</button>
+              <button className={styles.printBtn}>
+                <FiPrinter size={16} /> REPRINT RECEIPT
+              </button>
               <button className={styles.closeBtn} onClick={() => setViewingReceipt(null)}>
                 CLOSE PANEL
               </button>

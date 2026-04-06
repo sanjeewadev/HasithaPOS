@@ -1,6 +1,16 @@
 // src/renderer/src/views/Inventory/ProductCatalog.tsx
-import { useState, useEffect, useMemo } from 'react' // 🚀 Removed unused React import
+import { useState, useEffect, useMemo } from 'react'
 import Swal from 'sweetalert2'
+import {
+  FiSearch,
+  FiFolder,
+  FiFolderMinus,
+  FiChevronRight,
+  FiChevronDown,
+  FiBox,
+  FiEye,
+  FiX
+} from 'react-icons/fi'
 import { Category, Product } from '../../types/models'
 import styles from './ProductCatalog.module.css'
 
@@ -34,7 +44,6 @@ export default function ProductCatalog() {
     loadData()
   }, [])
 
-  // --- ACTIONS: VIEW BATCHES ---
   const handleViewProduct = async (product: Product) => {
     setViewingProduct(product)
     try {
@@ -87,9 +96,19 @@ export default function ProductCatalog() {
                   }
                 }}
               >
-                {hasChildren ? (isExpanded ? '▼' : '▶') : ''}
+                {hasChildren ? (
+                  isExpanded ? (
+                    <FiChevronDown size={14} />
+                  ) : (
+                    <FiChevronRight size={14} />
+                  )
+                ) : (
+                  <span style={{ width: '14px', display: 'inline-block' }}></span>
+                )}
               </span>
-              <span className={styles.folderIcon}>{isExpanded ? '📂' : '📁'}</span>
+              <span className={styles.folderIcon}>
+                {isExpanded ? <FiFolderMinus size={16} /> : <FiFolder size={16} />}
+              </span>
               {cat.Name}
             </div>
             {isExpanded && renderTree(cat.Id, depth + 1)}
@@ -131,8 +150,13 @@ export default function ProductCatalog() {
               setSearchQuery('')
             }}
           >
-            <span className={styles.expandIcon}>•</span>
-            <span className={styles.folderIcon}>📦</span>
+            <span
+              className={styles.expandIcon}
+              style={{ width: '14px', display: 'inline-block' }}
+            ></span>
+            <span className={styles.folderIcon}>
+              <FiBox size={16} />
+            </span>
             All Products
           </div>
           {treeContent}
@@ -142,17 +166,20 @@ export default function ProductCatalog() {
       {/* LAYER 2: DATA TABLE */}
       <div className={styles.panel}>
         <div className={styles.headerRow}>
-          <h2 className={styles.panelHeaderTitle}>PRODUCT VIEWER</h2>
-          <input
-            type="text"
-            className={styles.classicInput}
-            placeholder="Global Search (Name or Code)..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value)
-              if (e.target.value) setSelectedCatId(null)
-            }}
-          />
+          <h2 className={styles.pageTitle}>PRODUCT VIEWER</h2>
+          <div className={styles.searchWrapper}>
+            <FiSearch className={styles.searchIcon} />
+            <input
+              type="text"
+              className={styles.classicInput}
+              placeholder="Global Search (Name or Code)..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                if (e.target.value) setSelectedCatId(null)
+              }}
+            />
+          </div>
         </div>
 
         <div className={styles.tableWrapper}>
@@ -173,7 +200,7 @@ export default function ProductCatalog() {
                 <tr>
                   <td
                     colSpan={7}
-                    style={{ textAlign: 'center', padding: '50px', color: 'var(--text-muted)' }}
+                    style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}
                   >
                     {searchQuery
                       ? 'No products match your search.'
@@ -187,12 +214,12 @@ export default function ProductCatalog() {
                       style={{
                         fontFamily: 'monospace',
                         color: 'var(--text-muted)',
-                        fontSize: '13px'
+                        fontSize: '12px'
                       }}
                     >
                       {product.Barcode}
                     </td>
-                    <td style={{ fontWeight: 800 }}>{product.Name}</td>
+                    <td style={{ fontWeight: 800, color: 'var(--text-main)' }}>{product.Name}</td>
                     <td style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>
                       {getCatName(product.CategoryId)}
                     </td>
@@ -216,7 +243,7 @@ export default function ProductCatalog() {
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <button className={styles.viewBtn} onClick={() => handleViewProduct(product)}>
-                        VIEW BATCHES
+                        <FiEye size={14} /> VIEW BATCHES
                       </button>
                     </td>
                   </tr>
@@ -241,7 +268,7 @@ export default function ProductCatalog() {
                   style={{
                     fontSize: '13px',
                     color: 'var(--text-muted)',
-                    marginTop: '6px',
+                    marginTop: '4px',
                     fontWeight: 600
                   }}
                 >
@@ -252,9 +279,9 @@ export default function ProductCatalog() {
               <div
                 style={{
                   textAlign: 'right',
-                  background: 'var(--bg-surface)',
+                  background: 'var(--bg-canvas)',
                   padding: '10px 20px',
-                  borderRadius: '8px',
+                  borderRadius: '4px',
                   border: '1px solid var(--border-color)'
                 }}
               >
@@ -281,11 +308,12 @@ export default function ProductCatalog() {
             <div className={styles.modalBody}>
               <h3
                 style={{
-                  fontSize: '15px',
+                  fontSize: '14px',
                   marginBottom: '15px',
                   color: 'var(--text-main)',
                   textTransform: 'uppercase',
-                  fontWeight: 800
+                  fontWeight: 900,
+                  letterSpacing: '0.5px'
                 }}
               >
                 Active Inventory Batches (GRN History)
@@ -380,7 +408,7 @@ export default function ProductCatalog() {
             {/* Modal Footer */}
             <div className={styles.modalFooter}>
               <button className={styles.closeBtn} onClick={() => setViewingProduct(null)}>
-                CLOSE WINDOW
+                <FiX size={16} /> CLOSE WINDOW
               </button>
             </div>
           </div>

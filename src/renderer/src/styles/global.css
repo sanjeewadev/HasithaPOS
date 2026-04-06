@@ -30,9 +30,9 @@
 
   /* --- 📐 SHAPES & SHADOWS --- */
   --border-color: #e2e8f0;
-  --border-radius-sm: 6px;
-  --border-radius-md: 10px;
-  --border-radius-lg: 16px;
+  --border-radius-sm: 4px;
+  --border-radius-md: 0px;
+  --border-radius-lg: 4px;
 
   /* Deeper, more defined shadows for a hardware store feel */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);

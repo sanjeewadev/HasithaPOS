@@ -1,6 +1,16 @@
 // src/renderer/src/views/POS/POSWorkspace.tsx
 import React, { useState, useEffect, useMemo } from 'react'
-import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
+import Swal from 'sweetalert2'
+import {
+  FiSearch,
+  FiX,
+  FiZap,
+  FiAlertCircle,
+  FiAlertTriangle,
+  FiTrash2,
+  FiPrinter,
+  FiCreditCard
+} from 'react-icons/fi'
 import { Product } from '../../types/models'
 import styles from './POSWorkspace.module.css'
 
@@ -61,7 +71,6 @@ export default function POSWorkspace() {
       const activeBatches = batches.filter((b: any) => b.RemainingQuantity > 0)
 
       if (activeBatches.length === 0) {
-        // 🚀 FIXED: Call Swal, then return
         Swal.fire('Inventory Mismatch', 'No active batches found for this product.', 'error')
         return
       }
@@ -88,7 +97,6 @@ export default function POSWorkspace() {
       const currentQty = parseFloat(existingItem.quantity) || 0
 
       if (currentQty >= existingItem.availableStock) {
-        // 🚀 FIXED: Call Swal, then return
         Swal.fire(
           'Stock Limit',
           `Only ${existingItem.availableStock} left in this batch!`,
@@ -164,7 +172,6 @@ export default function POSWorkspace() {
   }, 0)
   const grandTotal = subTotal - totalDiscount
 
-  // 🚀 SECURITY CHECKS
   const hasLossItem = cartItems.some((item) => (parseFloat(item.unitPrice) || 0) < item.buyPrice)
   const hasZeroQty = cartItems.some((item) => (parseFloat(item.quantity) || 0) <= 0)
 
@@ -173,7 +180,6 @@ export default function POSWorkspace() {
   const handleProcessSale = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
 
-    // 🚀 FIXED: Call Swal, then return
     if (cartItems.length === 0) {
       Swal.fire('Empty Cart', 'Cart is empty!', 'warning')
       return
@@ -236,6 +242,19 @@ export default function POSWorkspace() {
       // @ts-ignore
       await window.api.processCompleteSale(transaction, movements)
 
+      // 🚀 HARDWARE PRINTING LOGIC INTEGRATION
+      try {
+        // @ts-ignore
+        if (checkoutMode === 'cash' && window.api.printReceipt) {
+          // Send to printer silently. If no printer is connected, the Electron
+          // backend should just ignore this or return gracefully.
+          // @ts-ignore
+          await window.api.printReceipt(transaction, movements)
+        }
+      } catch (printError) {
+        console.error('Printer not found or failed, completing digital sale anyway.', printError)
+      }
+
       setCartItems([])
       setSelectedCartUid(null)
       setCheckoutMode('none')
@@ -243,70 +262,7 @@ export default function POSWorkspace() {
       setDownPayment('')
       loadData()
 
-      Swal.fire('✅ Sale Successful!', `Receipt ID: ${receiptId}`, 'success')
-    } catch (error: any) {
-      Swal.fire('Checkout Failed', error.message, 'error')
-    } finally {
-      setIsProcessing(false)
-    }
-  }
-
-  const handleFastCheckout = async () => {
-    // 🚀 FIXED: Call Swal, then return
-    if (cartItems.length === 0) {
-      Swal.fire('Empty Cart', 'Cart is empty!', 'warning')
-      return
-    }
-
-    if (hasLossItem) {
-      Swal.fire(
-        'Sale Blocked',
-        'Cannot process sale. One or more items are priced below cost!',
-        'error'
-      )
-      return
-    }
-
-    if (hasZeroQty) {
-      Swal.fire(
-        'Sale Blocked',
-        'Cannot process sale. One or more items have a quantity of 0!',
-        'error'
-      )
-      return
-    }
-
-    setIsProcessing(true)
-    try {
-      const receiptId = `INV-${Date.now()}`
-
-      const transaction = {
-        ReceiptId: receiptId,
-        TransactionDate: new Date().toISOString(),
-        TotalAmount: grandTotal,
-        PaidAmount: grandTotal,
-        IsCredit: 0,
-        CustomerName: 'Walk-in Customer',
-        Status: 0
-      }
-
-      const movements = cartItems.map((item) => ({
-        ProductId: item.productId,
-        Quantity: parseFloat(item.quantity) || 0,
-        UnitCost: item.originalPrice,
-        UnitPrice: parseFloat(item.unitPrice) || 0,
-        StockBatchId: item.batchId,
-        Note: ''
-      }))
-
-      // @ts-ignore
-      await window.api.processCompleteSale(transaction, movements)
-
-      setCartItems([])
-      setSelectedCartUid(null)
-      loadData()
-
-      Swal.fire('✅ Fast Checkout Complete!', `Receipt ID: ${receiptId}`, 'success')
+      Swal.fire('Sale Successful!', `Receipt ID: ${receiptId}`, 'success')
     } catch (error: any) {
       Swal.fire('Checkout Failed', error.message, 'error')
     } finally {
@@ -320,14 +276,26 @@ export default function POSWorkspace() {
         {/* TOP LEFT: PRODUCT CATALOG GRID */}
         <div className={styles.gridPanel}>
           <div className={styles.gridHeader}>
-            PRODUCTS CATALOG
-            <input
-              type="text"
-              className={styles.searchInput}
-              placeholder="Search by Name or Barcode..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <span
+              style={{
+                fontSize: '16px',
+                fontWeight: 900,
+                color: 'white',
+                letterSpacing: '0.5px'
+              }}
+            >
+              PRODUCTS CATALOG
+            </span>
+            <div className={styles.searchWrapper}>
+              <FiSearch className={styles.searchIcon} />
+              <input
+                type="text"
+                className={styles.searchInput}
+                placeholder="Search by Name or Barcode..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className={styles.productsArea}>
@@ -347,16 +315,7 @@ export default function POSWorkspace() {
               </div>
             ))}
             {displayedProducts.length === 0 && (
-              <div
-                style={{
-                  gridColumn: '1 / -1',
-                  textAlign: 'center',
-                  padding: '40px',
-                  color: 'var(--text-muted)'
-                }}
-              >
-                No active products to display.
-              </div>
+              <div className={styles.emptyGridMsg}>No active products to display.</div>
             )}
           </div>
         </div>
@@ -382,7 +341,7 @@ export default function POSWorkspace() {
                   onClick={() => setSelectedCartUid(null)}
                   title="Close Panel"
                 >
-                  ✖
+                  <FiX />
                 </button>
               </div>
             </div>
@@ -449,7 +408,7 @@ export default function POSWorkspace() {
                         )
                       }
                     >
-                      ⚡ Quick Apply Max Discount
+                      <FiZap size={14} /> Quick Apply Max Discount
                     </button>
                   )}
               </div>
@@ -468,14 +427,17 @@ export default function POSWorkspace() {
                     Unit Price
                   </label>
 
-                  {/* 🚀 FLEXIBLE WARNING MESSAGES */}
+                  {/* FLEXIBLE WARNING MESSAGES */}
                   {activeUnitPrice < activeEditItem.buyPrice ? (
                     <span className={styles.dangerTextCompact}>
-                      ⛔ BELOW COST (Rs {activeEditItem.buyPrice.toFixed(2)})!
+                      <FiAlertCircle size={12} /> BELOW COST (Rs{' '}
+                      {activeEditItem.buyPrice.toFixed(2)})!
                     </span>
                   ) : activeUnitPrice <
                     activeEditItem.originalPrice - activeEditItem.maxDiscount ? (
-                    <span className={styles.warningTextCompact}>⚠️ OVER MAX DISCOUNT</span>
+                    <span className={styles.warningTextCompact}>
+                      <FiAlertTriangle size={12} /> OVER MAX DISCOUNT
+                    </span>
                   ) : null}
                 </div>
                 <div
@@ -503,17 +465,17 @@ export default function POSWorkspace() {
             </div>
           </div>
         ) : (
-          <div
-            className={styles.editPanelActive}
-            style={{
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--text-muted)',
-              border: '2px dashed var(--border-color)',
-              boxShadow: 'none'
-            }}
-          >
-            <h3 style={{ margin: 0, fontSize: '22px' }}>Current Order</h3>
+          <div className={styles.editPanelInactive}>
+            <h3
+              style={{
+                margin: 0,
+                fontSize: '22px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}
+            >
+              Current Order
+            </h3>
             <p style={{ margin: '5px 0 0 0', fontSize: '15px' }}>
               Select an item in the cart to rapidly edit quantity or apply discounts.
             </p>
@@ -545,16 +507,7 @@ export default function POSWorkspace() {
 
         <div className={styles.cartItemsArea}>
           {cartItems.length === 0 ? (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '40px',
-                color: 'var(--text-muted)',
-                fontWeight: 600
-              }}
-            >
-              Cart is empty...
-            </div>
+            <div className={styles.emptyCartMsg}>Cart is empty...</div>
           ) : (
             cartItems.map((item) => {
               const itemPrice = parseFloat(item.unitPrice) || 0
@@ -578,11 +531,17 @@ export default function POSWorkspace() {
                       <div
                         className={`${styles.cartItemDiscountInfo} ${isBelowCost ? styles.discDanger : isOverDiscount ? styles.discWarning : ''}`}
                       >
-                        {isBelowCost
-                          ? '⛔ LOSS: BELOW COST'
-                          : isOverDiscount
-                            ? '⚠️ OVER MAX DISC'
-                            : `Original: Rs ${item.originalPrice.toFixed(2)}`}
+                        {isBelowCost ? (
+                          <>
+                            <FiAlertCircle size={10} /> LOSS: BELOW COST
+                          </>
+                        ) : isOverDiscount ? (
+                          <>
+                            <FiAlertTriangle size={10} /> OVER MAX DISC
+                          </>
+                        ) : (
+                          `Original: Rs ${item.originalPrice.toFixed(2)}`
+                        )}
                       </div>
                     )}
                   </div>
@@ -598,7 +557,7 @@ export default function POSWorkspace() {
                       }}
                       title="Remove Item"
                     >
-                      ✕
+                      <FiTrash2 size={16} />
                     </button>
                   </div>
                 </div>
@@ -608,42 +567,18 @@ export default function POSWorkspace() {
         </div>
 
         <div className={styles.checkoutFooter}>
-          {/* 🚀 LOSS PREVENTION MESSAGE */}
+          {/* LOSS PREVENTION MESSAGE */}
           {hasLossItem && (
-            <div
-              style={{
-                backgroundColor: '#fef2f2',
-                color: '#dc2626',
-                padding: '10px',
-                borderRadius: '6px',
-                fontSize: '12px',
-                fontWeight: 800,
-                textAlign: 'center',
-                marginBottom: '15px',
-                border: '1px solid #fecaca'
-              }}
-            >
-              ⛔ CHECKOUT BLOCKED: One or more items are priced below their cost price.
+            <div className={styles.warningBannerDanger}>
+              <FiAlertCircle /> CHECKOUT BLOCKED: One or more items are priced below their cost
+              price.
             </div>
           )}
 
-          {/* 🚀 ZERO QUANTITY PREVENTION MESSAGE */}
+          {/* ZERO QUANTITY PREVENTION MESSAGE */}
           {hasZeroQty && (
-            <div
-              style={{
-                backgroundColor: '#fffbeb',
-                color: '#d97706',
-                padding: '10px',
-                borderRadius: '6px',
-                fontSize: '12px',
-                fontWeight: 800,
-                textAlign: 'center',
-                marginBottom: '15px',
-                border: '1px solid #fde68a'
-              }}
-            >
-              ⚠️ CHECKOUT BLOCKED: An item in your cart has 0 quantity. Update the quantity or
-              remove it.
+            <div className={styles.warningBannerYellow}>
+              <FiAlertTriangle /> CHECKOUT BLOCKED: An item in your cart has 0 quantity.
             </div>
           )}
 
@@ -662,7 +597,8 @@ export default function POSWorkspace() {
             <span className={styles.totalValue}>Rs {grandTotal.toFixed(2)}</span>
           </div>
 
-          <div className={styles.checkoutBtnGrid}>
+          {/* 🚀 UPDATED: UNIFIED 2-BUTTON CHECKOUT SYSTEM */}
+          <div className={styles.checkoutBtnGrid} style={{ gridTemplateColumns: '1fr 1fr' }}>
             <button
               className={`${styles.checkoutBtn} ${styles.btnPayPrint}`}
               onClick={() => {
@@ -674,7 +610,7 @@ export default function POSWorkspace() {
               }}
               disabled={hasLossItem || hasZeroQty}
             >
-              PAY & PRINT
+              <FiPrinter size={16} /> CASH CHECKOUT
             </button>
             <button
               className={`${styles.checkoutBtn} ${styles.btnCredit}`}
@@ -687,14 +623,7 @@ export default function POSWorkspace() {
               }}
               disabled={hasLossItem || hasZeroQty}
             >
-              CREDIT SALE
-            </button>
-            <button
-              className={`${styles.checkoutBtn} ${styles.btnCheckout}`}
-              onClick={handleFastCheckout}
-              disabled={isProcessing || hasLossItem || hasZeroQty}
-            >
-              {isProcessing ? '...' : 'CHECKOUT'}
+              <FiCreditCard size={16} /> CREDIT CHECKOUT
             </button>
           </div>
         </div>
@@ -718,18 +647,18 @@ export default function POSWorkspace() {
                   onClick={() => addToCart(batchModalProduct, batch)}
                 >
                   <div>
-                    <div style={{ fontWeight: 700, color: 'var(--primary)' }}>
+                    <div style={{ fontWeight: 800, color: 'var(--primary)' }}>
                       {batch.SupplierName || 'Stock Entry'}
                     </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>
                       Date: {new Date(batch.ReceivedDate).toLocaleDateString()}
                     </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>
                       In Stock: {batch.RemainingQuantity}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 800, color: 'var(--success)' }}>
+                    <div style={{ fontWeight: 900, color: 'var(--success)' }}>
                       Rs {batch.SellingPrice.toFixed(2)}
                     </div>
                   </div>
@@ -749,32 +678,14 @@ export default function POSWorkspace() {
       {checkoutMode !== 'none' && (
         <div className={styles.modalOverlay}>
           <div className={styles.checkoutModalBox}>
-            <div
-              className={styles.modalHeader}
-              style={{
-                fontSize: '24px',
-                borderBottom: '1px solid var(--border-color)',
-                paddingBottom: '15px'
-              }}
-            >
-              {checkoutMode === 'cash' ? 'Confirm Payment & Print' : 'Credit Sale Setup'}
+            <div className={styles.checkoutModalHeader}>
+              {checkoutMode === 'cash' ? 'Confirm Cash Payment' : 'Credit Sale Setup'}
             </div>
 
             <form onSubmit={handleProcessSale} className={styles.checkoutForm}>
               <div className={styles.checkoutTotalBanner}>
-                <div
-                  style={{
-                    fontSize: '14px',
-                    fontWeight: 800,
-                    color: 'var(--text-muted)',
-                    textTransform: 'uppercase'
-                  }}
-                >
-                  Amount Due
-                </div>
-                <div style={{ fontSize: '38px', fontWeight: 900, color: 'var(--text-main)' }}>
-                  Rs {grandTotal.toFixed(2)}
-                </div>
+                <div className={styles.checkoutTotalLabel}>Amount Due</div>
+                <div className={styles.checkoutTotalValue}>Rs {grandTotal.toFixed(2)}</div>
               </div>
 
               {checkoutMode === 'credit' && (
@@ -802,11 +713,8 @@ export default function POSWorkspace() {
                       placeholder="0.00"
                     />
                   </div>
-                  <div
-                    className={styles.changeDueBox}
-                    style={{ background: '#fffbeb', color: '#d97706', borderColor: '#fde68a' }}
-                  >
-                    <div style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase' }}>
+                  <div className={styles.changeDueBox}>
+                    <div style={{ fontSize: '13px', fontWeight: 800, textTransform: 'uppercase' }}>
                       Remaining Debt to Collect Later
                     </div>
                     <div style={{ fontSize: '28px', fontWeight: 900 }}>
@@ -829,7 +737,7 @@ export default function POSWorkspace() {
                   {isProcessing
                     ? 'Processing...'
                     : checkoutMode === 'cash'
-                      ? 'COMPLETE & PRINT'
+                      ? 'COMPLETE SALE'
                       : 'AUTHORIZE CREDIT'}
                 </button>
               </div>

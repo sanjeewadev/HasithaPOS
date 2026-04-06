@@ -1,43 +1,56 @@
 /* src/renderer/src/views/Settings/UserManager.module.css */
+
 .container {
   display: grid;
-  grid-template-columns: 1.8fr 1fr;
-  gap: 10px;
+  grid-template-columns: 2fr 1fr; /* Slightly wider left panel for the table */
+  gap: 8px; /* More breathing room between panels */
   height: 100%;
 }
 
 .panel {
   background: #ffffff;
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 24px;
+  border-radius: 4px; /* Keeps the main container slightly rounded */
+  padding: 30px; /* Bigger padding for a cleaner look */
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); /* Modern soft shadow */
 }
 
 .panelHeader {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
+/* 🚀 Target the inline styled span in the header to make it BIG */
+.panelHeader span {
+  font-size: 22px !important; /* BIG clear title, overriding the inline 14px */
+  color: var(--text-main);
+  letter-spacing: 0.5px;
+}
+
 .searchInput {
-  padding: 10px 16px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  font-size: 13px;
-  width: 250px;
+  padding: 12px 16px;
+  border: 2px solid var(--border-color); /* Thicker border for clear visibility */
+  border-radius: 4px; /* 🚀 4px radius as requested */
+  font-size: 15px; /* Larger font */
+  width: 300px;
   background: var(--bg-canvas);
   outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.searchInput:focus {
+  border-color: var(--primary);
 }
 
 .tableWrapper {
   flex: 1;
   overflow-y: auto;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 4px; /* 🚀 4px radius */
 }
 
 .classicTable {
@@ -48,67 +61,72 @@
 .classicTable th {
   background: var(--bg-sidebar);
   color: white;
-  padding: 12px 16px;
+  padding: 16px 20px; /* Bigger padding for headers */
   text-align: left;
-  font-size: 11px;
+  font-size: 13px; /* Larger header text */
   text-transform: uppercase;
   position: sticky;
   top: 0;
+  letter-spacing: 0.5px;
 }
 
 .classicTable td {
-  padding: 14px 16px;
+  padding: 16px 20px; /* Taller rows for easy reading/clicking */
   border-bottom: 1px solid var(--border-color);
-  font-size: 14px;
+  font-size: 15px; /* Larger text */
   color: var(--text-main);
 }
 
 .classicTable tr:hover {
-  background: rgba(37, 99, 235, 0.02);
+  background: rgba(37, 99, 235, 0.04);
   cursor: pointer;
 }
 
 .rowActive {
-  background: rgba(37, 99, 235, 0.05) !important;
+  background: rgba(37, 99, 235, 0.08) !important;
+  border-left: 4px solid var(--primary); /* Visual indicator for the active row */
 }
 
 /* Badges */
 .badgeAdmin {
   background: #e0e7ff;
   color: #4338ca;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 6px 10px;
+  border-radius: 4px; /* 🚀 4px radius */
   font-weight: 800;
-  font-size: 11px;
+  font-size: 12px;
 }
+
 .badgeStaff {
   background: #f1f5f9;
   color: #475569;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 6px 10px;
+  border-radius: 4px; /* 🚀 4px radius */
   font-weight: 800;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .statusActive {
   color: #16a34a;
   font-weight: 800;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .statusBlocked {
   color: #dc2626;
   font-weight: 800;
-  font-size: 12px;
+  font-size: 13px;
 }
 
-/* Form */
+/* Form Styles */
 .formTitle {
-  margin: 0 0 20px 0;
-  font-size: 18px;
+  margin: 0 0 24px 0;
+  font-size: 24px; /* 🚀 BIG clear title */
   font-weight: 900;
   text-transform: uppercase;
-  color: var(--text-main);
+  color: var(--primary);
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 12px;
 }
 
 .userForm {
@@ -118,102 +136,147 @@
 }
 
 .formGroup {
-  margin-bottom: 15px;
+  margin-bottom: 20px; /* More space between inputs */
 }
 
 .formGroup label {
   display: block;
   font-weight: 800;
-  margin-bottom: 6px;
-  color: var(--text-muted);
-  font-size: 12px;
+  margin-bottom: 8px;
+  color: var(--text-main); /* Darker label for readability */
+  font-size: 13px; /* Slightly larger */
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .classicInput,
 .classicSelect {
   width: 100%;
-  padding: 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  font-size: 14px;
+  padding: 14px 16px; /* Bigger touch target */
+  border: 2px solid var(--border-color); /* 🚀 Thicker border for quick visibility */
+  border-radius: 4px; /* 🚀 4px radius exactly as requested */
+  font-size: 15px; /* Larger font inside inputs */
   outline: none;
+  transition: all 0.2s ease;
+  color: var(--text-main);
+}
+
+.classicInput:focus,
+.classicSelect:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.classicInput:disabled {
+  background-color: var(--bg-canvas);
+  color: var(--text-muted);
+  cursor: not-allowed;
 }
 
 .infoBox {
   background: #f8fafc;
-  padding: 15px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  margin-top: 10px;
+  padding: 16px;
+  border-radius: 4px; /* 🚀 4px radius */
+  border: 1px solid #cbd5e1;
+  margin-top: 15px;
+  border-left: 4px solid var(--primary);
 }
+
 .infoTitle {
   font-weight: 800;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--primary);
-  margin-bottom: 5px;
+  margin-bottom: 6px;
 }
+
 .infoBox p {
   margin: 0;
-  font-size: 12px;
-  color: var(--text-muted);
-  line-height: 1.5;
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.6;
 }
 
 .btnGroup {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   margin-top: auto;
-  padding-top: 20px;
+  padding-top: 24px;
 }
 
 .primaryBtn {
   flex: 2;
-  background: var(--bg-sidebar);
+  background: var(--primary); /* Uses primary color to stand out clearly */
   color: white;
   border: none;
-  padding: 14px;
-  font-weight: 800;
-  border-radius: 8px;
+  padding: 16px; /* Bigger button */
+  font-size: 15px;
+  font-weight: 900;
+  border-radius: 4px; /* 🚀 4px radius */
   cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.primaryBtn:hover {
+  background: #2563eb;
+  opacity: 0.9;
 }
 
 .clearBtn {
   flex: 1;
   background: #f1f5f9;
-  color: #64748b;
-  border: 1px solid var(--border-color);
-  padding: 14px;
-  font-weight: 800;
-  border-radius: 8px;
+  color: #475569;
+  border: 2px solid #cbd5e1; /* Thicker borders on secondary buttons */
+  padding: 16px;
+  font-size: 15px;
+  font-weight: 900;
+  border-radius: 4px; /* 🚀 4px radius */
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clearBtn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 .blockBtn {
   background: #fee2e2;
-  color: #ef4444;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
+  color: #dc2626;
+  border: 1px solid #f87171;
+  padding: 8px 16px;
+  border-radius: 4px; /* 🚀 4px radius */
   font-weight: 800;
-  font-size: 11px;
+  font-size: 12px;
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.blockBtn:hover {
+  background: #fca5a5;
+  color: #991b1b;
 }
 
 .unblockBtn {
   background: #dcfce7;
   color: #16a34a;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
+  border: 1px solid #4ade80;
+  padding: 8px 16px;
+  border-radius: 4px; /* 🚀 4px radius */
   font-weight: 800;
-  font-size: 11px;
+  font-size: 12px;
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.unblockBtn:hover {
+  background: #bbf7d0;
+  color: #166534;
 }
 
 .emptyMsg {
   text-align: center;
-  padding: 40px;
+  padding: 60px;
   color: var(--text-muted);
+  font-size: 15px;
   font-weight: 600;
 }

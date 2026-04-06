@@ -1,75 +1,99 @@
-/* src/renderer/src/views/POS/ReturnsCenter.module.css */
+/* src/renderer/src/views/Returns/ReturnsCenter.module.css */
 
 .container {
   height: 100%;
-  width: 100%; /* 🚀 NEW: Forces it to span the entire screen */
-  flex: 1; /* 🚀 NEW: Tells it to fill all available space */
-  display: flex;
-  padding: 10px;
-  flex-direction: column;
-  gap: 10px;
-  padding-bottom: 10px;
+  width: 100%;
+  padding: 8px;
 }
 
-/* --- SEARCH PANEL --- */
-.searchPanel {
-  background: var(--bg-surface);
+/* 🚀 MASTER WHITE PANEL */
+.panel {
+  background: #ffffff;
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: var(--shadow-sm);
+  border-radius: 4px; /* 🚀 Strict 4px standard */
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  min-height: 100%;
 }
-.panelTitle {
-  margin: 0 0 15px 0;
-  color: var(--text-main);
-  font-size: 18px;
-  font-weight: 800;
+
+/* 🚀 BIG CLEAR TITLE */
+.pageTitle {
+  margin: 0 0 24px 0;
+  font-size: 24px;
+  font-weight: 900;
   text-transform: uppercase;
+  color: var(--primary);
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 12px;
 }
+
+.searchSection {
+  margin-bottom: 24px;
+}
+
 .searchForm {
   display: flex;
-  gap: 15px;
+  gap: 12px;
 }
-.searchInput {
+
+.inputWrapper {
+  position: relative;
   flex: 1;
-  padding: 15px 20px;
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
   font-size: 18px;
-  font-family: monospace;
+}
+
+/* 🚀 4PX INPUTS WITH 2PX BORDERS */
+.classicInput {
+  width: 100%;
+  padding: 14px 16px 14px 42px; /* Pad for icon */
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 16px;
+  font-family: inherit;
   font-weight: 700;
-  transition: border-color 0.2s;
+  background: var(--bg-canvas);
   outline: none;
+  transition: all 0.2s ease;
 }
-.searchInput:focus {
+
+.classicInput:focus {
   border-color: var(--primary);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
+
 .searchBtn {
-  padding: 15px 30px;
+  padding: 0 30px;
   background: var(--primary);
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 800;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 900;
   cursor: pointer;
   transition: 0.2s;
   text-transform: uppercase;
 }
+
 .searchBtn:hover {
-  filter: brightness(0.9);
-}
-.searchBtn:disabled {
-  background: var(--text-muted);
-  cursor: not-allowed;
+  background: #2563eb;
 }
 
-/* --- MAIN AREA --- */
 .mainArea {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  min-height: 0;
 }
 
 .emptyState {
@@ -78,152 +102,217 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--bg-surface);
+  background: #f8fafc;
   border: 2px dashed var(--border-color);
-  border-radius: 12px;
-  color: var(--text-muted);
+  border-radius: 4px;
   text-align: center;
+  padding: 40px;
 }
-.emptyState h2 {
-  margin: 0 0 10px 0;
+
+.emptyIcon {
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  opacity: 0.4;
+}
+
+.emptyState h3 {
+  margin: 0;
   color: var(--text-main);
-  font-weight: 800;
-  font-size: 24px;
+  font-weight: 900;
+  text-transform: uppercase;
 }
+
 .emptyState p {
-  font-size: 16px;
+  color: var(--text-muted);
   font-weight: 600;
 }
 
-.billPanel {
+.billContent {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
+  min-height: 0;
 }
 
 .billHeader {
-  padding: 24px;
-  background: #f8fafc;
-  border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
+  margin-bottom: 20px;
+  padding: 20px;
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.receiptTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--text-main);
+}
+
+.receiptSub {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.receiptSub span {
+  color: var(--primary);
+}
+
+.billTotalBox {
+  text-align: right;
+}
+
+.totalLabel {
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.totalValue {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--text-main);
 }
 
 .dangerBanner {
-  background: #fef2f2;
+  background: #fee2e2;
   color: #dc2626;
-  padding: 15px 24px;
+  padding: 12px 20px;
   font-weight: 800;
-  border-bottom: 1px solid #fecaca;
-  text-align: center;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-/* --- TABLE --- */
 .tableWrapper {
   flex: 1;
   overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
 }
+
 .classicTable {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
 }
+
 .classicTable th {
-  background: var(--bg-canvas);
-  color: var(--text-muted);
-  padding: 16px;
+  background: var(--bg-sidebar);
+  color: white;
+  padding: 14px 16px;
   text-align: left;
   font-size: 11px;
   text-transform: uppercase;
-  border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
-  z-index: 1;
-}
-.classicTable td {
-  padding: 16px;
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-main);
-  vertical-align: middle;
+  z-index: 10;
 }
 
-.rowDisabled td {
-  opacity: 0.4;
-  background: #f8fafc;
+.classicTable td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-main);
+  font-size: 15px;
+}
+
+.rowDisabled {
+  background: #f1f5f9 !important;
+  opacity: 0.6;
 }
 
 .qtyInput {
-  width: 120px;
-  padding: 12px;
+  width: 100px;
+  padding: 10px;
   border: 2px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 16px;
+  border-radius: 4px;
+  font-size: 15px;
   font-weight: 900;
   text-align: center;
-  transition: 0.2s;
   outline: none;
+  background: #ffffff;
 }
+
 .qtyInput:focus {
   border-color: var(--danger);
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
-.qtyInput:disabled {
-  background: var(--bg-canvas);
-  border-color: transparent;
-}
 
-/* --- FOOTER --- */
 .billFooter {
-  padding: 20px 24px;
-  background: var(--bg-canvas);
-  border-top: 1px solid var(--border-color);
+  margin-top: 24px;
+  padding: 24px;
+  background: #f8fafc;
+  border-top: 2px solid var(--border-color);
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
+  border-radius: 4px;
 }
 
-.classicInput {
-  padding: 14px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 14px;
-  font-family: inherit;
-  font-weight: 700;
-  outline: none;
-  transition: 0.2s;
+.reasonBox {
+  flex: 1;
 }
-.classicInput:focus {
-  border-color: var(--primary);
+
+.reasonBox label {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.reasonBox .classicInput {
+  padding-left: 16px;
+  font-size: 14px;
 }
 
 .summaryBox {
   text-align: right;
-  padding-right: 20px;
-  border-right: 2px solid var(--border-color);
+  padding: 0 24px;
+  border-left: 2px solid var(--border-color);
+}
+
+.refundLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.refundValue {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--danger);
 }
 
 .processBtn {
-  padding: 15px 30px;
+  padding: 16px 32px;
   background: var(--danger);
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 800;
+  border-radius: 4px;
+  font-size: 15px;
+  font-weight: 900;
   cursor: pointer;
   transition: 0.2s;
-  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
+
 .processBtn:hover {
-  filter: brightness(0.9);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  background: #dc2626;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
 }
+
 .processBtn:disabled {
   background: var(--text-muted);
   cursor: not-allowed;

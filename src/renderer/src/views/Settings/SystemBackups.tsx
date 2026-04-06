@@ -1,6 +1,14 @@
 // src/renderer/src/views/Settings/SystemBackups.tsx
 import { useState, useEffect } from 'react'
-import Swal from 'sweetalert2' // 🚀 IMPORT SWEETALERT
+import Swal from 'sweetalert2'
+import {
+  FiPrinter,
+  FiDatabase,
+  FiDownload,
+  FiUpload,
+  FiAlertTriangle,
+  FiRefreshCw
+} from 'react-icons/fi'
 import styles from './SystemBackups.module.css'
 
 export default function SystemBackups() {
@@ -14,7 +22,6 @@ export default function SystemBackups() {
 
   useEffect(() => {
     loadPrinters()
-    // Load saved printer from local storage
     const savedPrinter = localStorage.getItem('pos_printer_name')
     if (savedPrinter) setSelectedPrinter(savedPrinter)
   }, [])
@@ -31,7 +38,7 @@ export default function SystemBackups() {
 
   const handleSavePrinter = () => {
     localStorage.setItem('pos_printer_name', selectedPrinter)
-    Swal.fire('Success', `✅ Printer configuration saved: ${selectedPrinter}`, 'success')
+    Swal.fire('Success', `Printer configuration saved: ${selectedPrinter}`, 'success')
   }
 
   const handleBackup = async () => {
@@ -40,10 +47,10 @@ export default function SystemBackups() {
       // @ts-ignore
       const result = await window.api.exportDatabase()
       if (result && result.success) {
-        Swal.fire('Backup Saved', '✅ Database backup saved successfully!', 'success')
+        Swal.fire('Backup Saved', 'Database backup saved successfully!', 'success')
       }
     } catch (err: any) {
-      Swal.fire('Backup Failed', `❌ ${err.message}`, 'error')
+      Swal.fire('Backup Failed', err.message, 'error')
     } finally {
       setIsProcessing(false)
     }
@@ -51,7 +58,7 @@ export default function SystemBackups() {
 
   const handleRestore = async () => {
     const confirmResult = await Swal.fire({
-      title: '🚨 CRITICAL WARNING',
+      title: 'CRITICAL WARNING',
       text: 'Restoring a backup will permanently overwrite ALL current data in the system. The application will restart automatically.\n\nAre you sure you want to proceed?',
       icon: 'warning',
       showCancelButton: true,
@@ -69,11 +76,10 @@ export default function SystemBackups() {
       // @ts-ignore
       const result = await window.api.importDatabase()
       if (result && !result.success && !result.canceled) {
-        Swal.fire('Restore Failed', '❌ Restore failed. Check logs.', 'error')
+        Swal.fire('Restore Failed', 'Restore failed. Check logs.', 'error')
       }
-      // Note: If successful, the app restarts so this won't even execute!
     } catch (err: any) {
-      Swal.fire('Restore Failed', `❌ ${err.message}`, 'error')
+      Swal.fire('Restore Failed', err.message, 'error')
     } finally {
       setIsProcessing(false)
     }
@@ -81,7 +87,6 @@ export default function SystemBackups() {
 
   const handleFactoryReset = async () => {
     if (resetText !== 'DELETE ALL DATA') {
-      // 🚀 FIXED: Call Swal, then return
       Swal.fire('Action Denied', 'You must type EXACTLY "DELETE ALL DATA" to proceed.', 'error')
       return
     }
@@ -90,118 +95,140 @@ export default function SystemBackups() {
     try {
       // @ts-ignore
       await window.api.factoryReset()
-      // App will automatically restart here
     } catch (err: any) {
-      Swal.fire('Factory Reset Failed', `❌ ${err.message}`, 'error')
+      Swal.fire('Factory Reset Failed', err.message, 'error')
       setIsProcessing(false)
     }
   }
 
   return (
     <div className={styles.container}>
-      <h2 className={styles.pageTitle}>SYSTEM PREFERENCES & DATA VAULT</h2>
+      {/* 🚀 THE FIX: Wrapped everything in the white Panel! */}
+      <div className={styles.panel}>
+        <h2 className={styles.formTitle}>SYSTEM PREFERENCES & DATA VAULT</h2>
 
-      <div className={styles.grid}>
-        {/* --- MODULE 1: HARDWARE (PRINTERS) --- */}
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h3>🖨️ Receipt Printer Configuration</h3>
-            <p>Select the default thermal printer for point-of-sale receipts.</p>
-          </div>
-          <div className={styles.cardBody}>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <select
-                className={styles.classicSelect}
-                value={selectedPrinter}
-                onChange={(e) => setSelectedPrinter(e.target.value)}
+        <div className={styles.grid}>
+          {/* --- MODULE 1: HARDWARE (PRINTERS) --- */}
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FiPrinter size={18} /> Receipt Printer Configuration
+              </h3>
+              <p>Select the default thermal printer for point-of-sale receipts.</p>
+            </div>
+            <div className={styles.cardBody}>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <select
+                  className={styles.classicSelect}
+                  value={selectedPrinter}
+                  onChange={(e) => setSelectedPrinter(e.target.value)}
+                >
+                  <option value="">-- Select a Printer --</option>
+                  {printers.map((p, idx) => (
+                    <option key={idx} value={p.name}>
+                      {p.name} {p.isDefault ? '(Default OS Printer)' : ''}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  className={styles.secondaryBtn}
+                  onClick={loadPrinters}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <FiRefreshCw /> Refresh
+                </button>
+              </div>
+              <button
+                className={styles.primaryBtn}
+                onClick={handleSavePrinter}
+                style={{ marginTop: '15px' }}
               >
-                <option value="">-- Select a Printer --</option>
-                {printers.map((p, idx) => (
-                  <option key={idx} value={p.name}>
-                    {p.name} {p.isDefault ? '(Default OS Printer)' : ''}
-                  </option>
-                ))}
-              </select>
-              <button className={styles.secondaryBtn} onClick={loadPrinters}>
-                🔄 Refresh
+                SAVE HARDWARE SETTINGS
               </button>
             </div>
-            <button
-              className={styles.primaryBtn}
-              onClick={handleSavePrinter}
-              style={{ marginTop: '15px' }}
-            >
-              SAVE HARDWARE SETTINGS
-            </button>
           </div>
-        </div>
 
-        {/* --- MODULE 2: DATABASE BACKUP & RESTORE --- */}
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h3>💾 Database Vault</h3>
-            <p>Securely backup your financial data to a USB drive, or restore an old backup.</p>
-          </div>
-          <div className={styles.cardBody} style={{ display: 'flex', gap: '15px' }}>
-            <button className={styles.backupBtn} onClick={handleBackup} disabled={isProcessing}>
-              <span style={{ fontSize: '24px' }}>📥</span>
-              <br />
-              EXPORT BACKUP
-            </button>
-            <button className={styles.restoreBtn} onClick={handleRestore} disabled={isProcessing}>
-              <span style={{ fontSize: '24px' }}>📤</span>
-              <br />
-              RESTORE DATA
-            </button>
-          </div>
-        </div>
-
-        {/* --- MODULE 3: DANGER ZONE (FACTORY RESET) --- */}
-        <div className={`${styles.card} ${styles.dangerCard}`}>
-          <div className={styles.cardHeader}>
-            <h3 style={{ color: 'var(--danger)' }}>🚨 DANGER ZONE: Factory Reset</h3>
-            <p>
-              This will permanently wipe ALL inventory, suppliers, sales, and credit logs. Only
-              Admin accounts will remain.
-            </p>
-          </div>
-          <div className={styles.cardBody}>
-            {!showResetConfirm ? (
-              <button className={styles.dangerBtnOutline} onClick={() => setShowResetConfirm(true)}>
-                INITIATE FACTORY RESET
+          {/* --- MODULE 2: DATABASE BACKUP & RESTORE --- */}
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FiDatabase size={18} /> Database Vault
+              </h3>
+              <p>Securely backup your financial data to a USB drive, or restore an old backup.</p>
+            </div>
+            <div className={styles.cardBody} style={{ display: 'flex', gap: '15px' }}>
+              <button className={styles.backupBtn} onClick={handleBackup} disabled={isProcessing}>
+                <FiDownload size={24} style={{ marginBottom: '8px' }} />
+                <br />
+                EXPORT BACKUP
               </button>
-            ) : (
-              <div className={styles.resetConfirmBox}>
-                <label>
-                  To proceed, type <strong>DELETE ALL DATA</strong> below:
-                </label>
-                <input
-                  type="text"
-                  className={styles.classicInput}
-                  placeholder="DELETE ALL DATA"
-                  value={resetText}
-                  onChange={(e) => setResetText(e.target.value)}
-                />
-                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                  <button
-                    className={styles.secondaryBtn}
-                    onClick={() => {
-                      setShowResetConfirm(false)
-                      setResetText('')
-                    }}
-                  >
-                    CANCEL
-                  </button>
-                  <button
-                    className={styles.dangerBtnSolid}
-                    onClick={handleFactoryReset}
-                    disabled={resetText !== 'DELETE ALL DATA' || isProcessing}
-                  >
-                    CONFIRM PURGE
-                  </button>
+              <button className={styles.restoreBtn} onClick={handleRestore} disabled={isProcessing}>
+                <FiUpload size={24} style={{ marginBottom: '8px' }} />
+                <br />
+                RESTORE DATA
+              </button>
+            </div>
+          </div>
+
+          {/* --- MODULE 3: DANGER ZONE (FACTORY RESET) --- */}
+          <div className={`${styles.card} ${styles.dangerCard}`}>
+            <div className={styles.cardHeaderDanger}>
+              <h3
+                style={{
+                  color: 'var(--danger)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <FiAlertTriangle size={18} /> DANGER ZONE: Factory Reset
+              </h3>
+              <p style={{ color: '#991b1b' }}>
+                This will permanently wipe ALL inventory, suppliers, sales, and credit logs. Only
+                Admin accounts will remain.
+              </p>
+            </div>
+            <div className={styles.cardBody}>
+              {!showResetConfirm ? (
+                <button
+                  className={styles.dangerBtnOutline}
+                  onClick={() => setShowResetConfirm(true)}
+                >
+                  INITIATE FACTORY RESET
+                </button>
+              ) : (
+                <div className={styles.resetConfirmBox}>
+                  <label>
+                    To proceed, type <strong>DELETE ALL DATA</strong> below:
+                  </label>
+                  <input
+                    type="text"
+                    className={styles.classicInput}
+                    placeholder="DELETE ALL DATA"
+                    value={resetText}
+                    onChange={(e) => setResetText(e.target.value)}
+                  />
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                    <button
+                      className={styles.secondaryBtn}
+                      onClick={() => {
+                        setShowResetConfirm(false)
+                        setResetText('')
+                      }}
+                    >
+                      CANCEL
+                    </button>
+                    <button
+                      className={styles.dangerBtnSolid}
+                      onClick={handleFactoryReset}
+                      disabled={resetText !== 'DELETE ALL DATA' || isProcessing}
+                    >
+                      CONFIRM PURGE
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>

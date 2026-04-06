@@ -4,140 +4,154 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  padding-bottom: 10px;
-  padding-right: 5px;
 }
 
-/* --- 🚀 NEW: TOP DASHBOARD HEADER --- */
+/* 🚀 MASTER WHITE PANEL */
+.panel {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  min-height: 100%;
+}
+
+/* 🚀 BIG CLEAR TITLE */
+.pageTitle {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: var(--primary);
+  flex: 1;
+}
+
 .headerRow {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  background: var(--bg-surface);
-  padding: 16px 24px;
-  border-radius: 12px;
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
-}
-
-.pageTitle {
-  margin: 0;
-  color: var(--text-main);
-  font-size: 20px;
-  font-weight: 900;
-  letter-spacing: -0.5px;
+  align-items: flex-end;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 12px;
+  margin-bottom: 24px;
 }
 
 .refreshBtn {
-  padding: 10px 20px;
+  padding: 12px 20px;
   background: #0f172a;
   color: white;
   border: none;
-  border-radius: 6px;
-  font-weight: 800;
+  border-radius: 4px;
+  font-weight: 900;
   font-size: 13px;
   cursor: pointer;
   transition: 0.2s;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
+
 .refreshBtn:hover {
   background: #1e293b;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
 }
-.refreshBtn:disabled {
-  background: var(--text-muted);
-  cursor: wait;
-  box-shadow: none;
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* --- THE DUAL PANELS --- */
 .gridContainer {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  flex: 1; /* Pushes grid to take remaining screen height */
-  min-height: 0; /* Prevents flex children from overflowing the screen */
+  gap: 8px; /* Standard tight gap */
+  flex: 1;
+  min-height: 0;
 }
 
-.alertPanel {
+.alertColumn {
   background: #ffffff;
   border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: 4px;
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
 
-.panelHeader {
-  padding: 20px 24px;
+.columnHeader {
+  padding: 16px 20px;
   font-weight: 900;
-  font-size: 16px;
+  font-size: 14px;
   text-transform: uppercase;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 10px;
+  letter-spacing: 0.5px;
 }
+
 .dangerHeader {
   background: #fef2f2;
   color: #dc2626;
   border-bottom: 2px solid #fecaca;
 }
+
 .warningHeader {
   background: #fffbeb;
   color: #d97706;
   border-bottom: 2px solid #fde68a;
 }
 
-/* --- SCROLLING LIST AREA --- */
+/* --- LIST AREA --- */
 .listWrapper {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 16px;
   background: #f8fafc;
 }
 
-/* --- CARD GRID --- */
 .cardGrid {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .alertCard {
   background: #ffffff;
-  padding: 16px 20px;
-  border-radius: 8px;
+  padding: 14px 16px;
+  border-radius: 4px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
-}
-.alertCard:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 2px solid var(--border-color);
+  transition: 0.2s;
 }
 
 .dangerCard {
-  border: 1px solid #fecaca;
-  border-left: 6px solid #dc2626;
-}
-.warningCard {
-  border: 1px solid #fde68a;
-  border-left: 6px solid #f59e0b;
+  border-left: 5px solid #dc2626;
 }
 
-/* --- ITEM INFO --- */
+.warningCard {
+  border-left: 5px solid #f59e0b;
+}
+
+.alertCard:hover {
+  background: #ffffff;
+  border-color: var(--primary);
+}
+
 .itemInfo {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .itemName {
@@ -156,21 +170,20 @@
 /* --- BADGES --- */
 .statusBadge {
   padding: 6px 12px;
-  border-radius: 6px;
+  border-radius: 4px;
   font-weight: 900;
   font-size: 11px;
   text-transform: uppercase;
 }
 
 .dangerBadge {
-  background: #fef2f2;
+  background: #fee2e2;
   color: #dc2626;
-  border: 1px solid #fee2e2;
 }
+
 .warningBadge {
-  background: #fffbeb;
+  background: #fef3c7;
   color: #d97706;
-  border: 1px solid #fef3c7;
 }
 
 /* --- EMPTY STATES --- */
@@ -184,17 +197,18 @@
   text-align: center;
 }
 
-.emptyIcon {
-  font-size: 48px;
-  margin-bottom: 15px;
-  opacity: 0.8;
+.successIcon {
+  color: #10b981;
+  margin-bottom: 12px;
+  opacity: 0.6;
 }
 
 .emptyState h3 {
   color: var(--text-main);
-  margin: 0 0 10px 0;
+  margin: 0 0 4px 0;
   font-weight: 900;
-  font-size: 20px;
+  font-size: 18px;
+  text-transform: uppercase;
 }
 
 .emptyState p {
